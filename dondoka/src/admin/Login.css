@@ -1,0 +1,188 @@
+.container-main-login {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+}
+
+/* lado esquerdo */
+
+.container-left {
+    flex: 1.5;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    padding: 40px;
+    text-align: center;
+}
+
+
+.logo-area {
+    margin-bottom: 30px;
+}
+
+.info-system {
+    text-align: center;
+    max-width: 400px;
+}
+
+.info-system h2 {
+    font-size: 36px;
+
+    color: #222;
+}
+
+.info-system p {
+    font-size: 16px;
+    color: #777;
+}
+
+.info-system li {
+    margin: 10px 0;
+    font-size: 17px;
+    color: #444;
+}
+
+/* lado direito */
+
+.container-right {
+    flex: 1;
+    background: linear-gradient(135deg, #eb268f, #fe4ca2);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* formulário */
+
+.container-forms-login {
+    width: 400px;
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    animation: fadeUp 0.6s ease;
+}
+
+
+.container-forms-login h2 {
+    margin-bottom: 25px;
+    font-size: 28px;
+    color: #412d2b;
+    text-align: center;
+
+
+}
+
+/* inputs */
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.container input {
+    padding: 14px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    font-size: 16px;
+    transition: all 0.25s ease;
+}
+
+.container input:focus {
+    border-color: #eb268f;
+    box-shadow: 0 0 0 2px rgba(235, 38, 143, 0.15);
+    outline: none;
+}
+
+.login-options {
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+}
+
+.remember {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.login-options a {
+    text-decoration: none;
+    color: #eb268f;
+}
+
+.login-options a:hover {
+    text-decoration: underline;
+}
+
+
+/* botão */
+
+button {
+    margin-top: 20px;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    background: #eb268f;
+    color: white;
+    font-size: 16px;
+    width: 15vw;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+button:hover {
+    background: #c91d77;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+}
+
+.login-footer {
+    text-align: center;
+}
+
+.login-footer p {
+    font-size: 12px;
+    color: #555;
+}
+
+.login-footer span {
+    font-size: 11px;
+    color: #888;
+}
+
+/* animação */
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* responsivo */
+
+@media (max-width:900px) {
+
+    .container-main-login {
+        flex-direction: column;
+    }
+
+    .container-left {
+        height: 250px;
+    }
+
+}

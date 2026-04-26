@@ -1,0 +1,38 @@
+{
+  "name": "dondoka_botique.tobias",
+  "version": "1.0.0",
+  "description": "Loja Virtual de roupas femininas",
+  "homepage": "https://github.com/matheusdevsilva/Dondoka-Boutique.tobias#readme",
+  "bugs": {
+    "url": "https://github.com/matheusdevsilva/Dondoka-Boutique.tobias/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/matheusdevsilva/Dondoka-Boutique.tobias.git"
+  },
+  "license": "ISC",
+  "author": "matheusdevsilva",
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.6.0",
+    "@types/pg": "^8.20.0",
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,106 @@
+import api from "../services/api"
+import { useState } from "react"
+import logo from "../assets/logo.jpeg"
+import "./Login.css"
+
+export default function LoginAdmin() {
+
+    const [username, setUsername] = useState<string>("")
+    const [password, setPassword] = useState<string>("")
+
+    async function handleSubmit(e: React.FormEvent) {
+
+        e.preventDefault()
+
+        try {
+
+            const response = await api.post("/admin/auth", {
+                username,
+                password
+            })
+            console.log(response.data)
+
+        } catch (error) {
+
+            console.error("Erro no login", error)
+
+        }
+    }
+
+    return (
+        <div className="container-main-login">
+
+            <div className="container-left">
+
+                <img src={logo} width={420} />
+                <div className="info-system">
+                    <h2>Dondoka Boutique</h2>
+                    <p>
+                        Painel administrativo da loja.
+                    </p>
+
+                    <h4>
+                        Gerencie produtos, vendas e clientes
+                        em um só lugar.
+                    </h4>
+                </div>
+
+
+            </div>
+
+            <div className="container-right">
+
+                <div className="container-forms-login">
+
+                    <form className="container" onSubmit={handleSubmit}>
+
+                        <h2>Sistema Admin</h2>
+
+                        <div className="container">
+
+                            <input
+                                type="text"
+                                placeholder="Usuario"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                            />
+
+                            <input
+                                type="password"
+                                placeholder="Senha"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+
+                        </div>
+
+                        <div className="login-options">
+
+                            <label className="remember">
+                                <input type="checkbox" />
+                                Lembrar acesso
+                            </label>
+
+                            <a href="#">Esqueci minha senha</a>
+
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <button type="submit">
+                                Entrar
+                            </button>
+                        </div>
+
+                        <div className="login-footer">
+                            <p>Painel Dondoka Boutique v1.0</p>
+                        
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+    )
+}

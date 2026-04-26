@@ -1,0 +1,131 @@
+.footer {
+    position: relative;
+    background: linear-gradient(135deg, #eb268f, #b3126a);
+    color: #fff;
+    padding: 80px 40px 20px;
+    overflow: hidden;
+    font-family: "Segoe UI", sans-serif;
+}
+
+/* brilho decorativo */
+.footer-glow {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    background: rgba(255,255,255,0.08);
+    filter: blur(120px);
+    top: -200px;
+    right: -200px;
+    border-radius: 50%;
+}
+
+.footer-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 2fr;
+    gap: 40px;
+    max-width: 1200px;
+    margin: auto;
+}
+
+/* logo */
+.footer-logo {
+    width: 160px;
+    margin-bottom: 15px;
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));
+}
+
+.footer-brand p {
+    opacity: 0.9;
+    line-height: 1.6;
+}
+
+/* títulos */
+.footer-column h4,
+.footer-news h4 {
+    font-size: 16px;
+    margin-bottom: 15px;
+    letter-spacing: 1px;
+}
+
+/* listas */
+.footer-column ul {
+    list-style: none;
+}
+
+.footer-column ul li {
+    margin-bottom: 10px;
+    opacity: 0.85;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.footer-column ul li:hover {
+    opacity: 1;
+    transform: translateX(5px);
+}
+
+/* newsletter */
+.footer-news p {
+    opacity: 0.85;
+    margin-bottom: 10px;
+}
+
+.footer-input {
+    display: flex;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.footer-input input {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    outline: none;
+}
+
+.footer-input button {
+    background: #111;
+    color: #fff;
+    border: none;
+    padding: 0 20px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.footer-input button:hover {
+    background: #000;
+}
+
+/* bottom */
+.footer-bottom {
+    text-align: center;
+    margin-top: 60px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+    font-size: 13px;
+    opacity: 0.8;
+}
+
+/* responsivo */
+@media (max-width: 900px) {
+    .footer-container {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .footer-container {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .footer-input {
+        flex-direction: column;
+    }
+
+    .footer-input button {
+        padding: 12px;
+    }
+}
