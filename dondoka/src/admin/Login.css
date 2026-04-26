@@ -1,3 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
 .container-main-login {
     display: flex;
     height: 100vh;
@@ -5,10 +8,10 @@
 }
 
 /* lado esquerdo */
-
 .container-left {
     flex: 1.5;
     background: white;
+
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -18,48 +21,28 @@
     text-align: center;
 }
 
-
 .logo-area {
-    margin-bottom: 30px;
-}
-
-.info-system {
-    text-align: center;
-    max-width: 400px;
-}
-
-.info-system h2 {
-    font-size: 36px;
-
-    color: #222;
-}
-
-.info-system p {
-    font-size: 16px;
-    color: #777;
-}
-
-.info-system li {
-    margin: 10px 0;
-    font-size: 17px;
-    color: #444;
+    padding: 100px;
+    border-radius: 20px;
+    box-shadow: 0 20px 80px rgba(90, 90, 90, 0.25);
 }
 
 /* lado direito */
-
 .container-right {
     flex: 1;
     background: linear-gradient(135deg, #eb268f, #fe4ca2);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 /* formulário */
-
 .container-forms-login {
     width: 400px;
+    max-width: 90%;
+
     background: white;
     padding: 40px;
     border-radius: 10px;
@@ -67,24 +50,35 @@
     animation: fadeUp 0.6s ease;
 }
 
-
-.container-forms-login h2 {
-    margin-bottom: 25px;
-    font-size: 28px;
-    color: #412d2b;
-    text-align: center;
-
-
-}
-
 /* inputs */
-
 .container {
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
+.admin-info {
+    text-align: center;
+}
+
+.admin-info h2 {
+    margin-bottom: 10px;
+    font-size: 28px;
+    border-bottom: 1px solid #555;
+    font-family: "Poppins", sans-serif;
+    color: #3d2e2b;
+}
+
+.admin-info span {
+    margin-bottom: 10px;
+
+    font-family: "Poppins", sans-serif;
+    font-size: 14px;
+    color: #555;
+}
+
+
+/* inputs */
 .container input {
     padding: 14px;
     border-radius: 8px;
@@ -99,11 +93,14 @@
     outline: none;
 }
 
+/* options */
 .login-options {
     margin-top: 10px;
+
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
     align-items: center;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
     font-size: 14px;
 }
 
@@ -111,6 +108,10 @@
     display: flex;
     gap: 6px;
     align-items: center;
+}
+
+.remember input {
+    accent-color: #eb268f;
 }
 
 .login-options a {
@@ -122,9 +123,7 @@
     text-decoration: underline;
 }
 
-
 /* botão */
-
 button {
     margin-top: 20px;
     padding: 14px;
@@ -133,8 +132,9 @@ button {
     background: #eb268f;
     color: white;
     font-size: 16px;
-    width: 15vw;
-    font-weight: 600;
+    font-family: "Poppins", sans-serif;
+    width: 100%;
+    font-weight: 900;
     cursor: pointer;
     transition: all 0.25s ease;
 }
@@ -145,6 +145,7 @@ button:hover {
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
 }
 
+/* footer */
 .login-footer {
     text-align: center;
 }
@@ -154,13 +155,7 @@ button:hover {
     color: #555;
 }
 
-.login-footer span {
-    font-size: 11px;
-    color: #888;
-}
-
 /* animação */
-
 @keyframes fadeUp {
     from {
         opacity: 0;
@@ -173,16 +168,40 @@ button:hover {
     }
 }
 
-/* responsivo */
-
-@media (max-width:900px) {
-
+@media (max-width: 900px) {
     .container-main-login {
         flex-direction: column;
     }
 
     .container-left {
-        height: 250px;
+        flex: none;
+        display: none;
+        height: auto;
+        padding: 30px;
     }
 
+    .logo-area {
+        padding: 40px;
+    }
+
+    .container-right {
+        padding: 30px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container-forms-login {
+        padding: 25px;
+        width: 100%;
+    }
+
+    .admin-info h2 {
+        font-size: 22px;
+    }
+
+    .login-options {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
 }

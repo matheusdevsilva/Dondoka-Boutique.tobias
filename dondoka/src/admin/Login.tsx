@@ -31,20 +31,9 @@ export default function LoginAdmin() {
         <div className="container-main-login">
 
             <div className="container-left">
-
-                <img src={logo} width={420} />
-                <div className="info-system">
-                    <h2>Dondoka Boutique</h2>
-                    <p>
-                        Painel administrativo da loja.
-                    </p>
-
-                    <h4>
-                        Gerencie produtos, vendas e clientes
-                        em um só lugar.
-                    </h4>
+                <div className="logo-area">
+                    <img src={logo} width={420} />
                 </div>
-
 
             </div>
 
@@ -53,9 +42,14 @@ export default function LoginAdmin() {
                 <div className="container-forms-login">
 
                     <form className="container" onSubmit={handleSubmit}>
-
-                        <h2>Sistema Admin</h2>
-
+                        <div className="admin-info">
+                            <h2>Sistema Admin</h2>
+                            <span>
+                                Painel administrativo da loja.
+                                <br />
+                                Gerencie produtos, vendas e clientes.
+                            </span>
+                        </div>
                         <div className="container">
 
                             <input
@@ -92,7 +86,7 @@ export default function LoginAdmin() {
 
                         <div className="login-footer">
                             <p>Painel Dondoka Boutique v1.0</p>
-                        
+
                         </div>
 
                     </form>
