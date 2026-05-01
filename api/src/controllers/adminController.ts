@@ -3,7 +3,7 @@ import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import pool from "../database/db.js"
 
-export default async function Login(req: Request, res: Response) {
+export async function Login(req: Request, res: Response) {
     try {
         const { username, password } = req.body
 
@@ -61,4 +61,15 @@ export default async function Login(req: Request, res: Response) {
             message: "Erro interno no servidor",
         })
     }
+}
+
+
+
+export async function CreateAdmin() {
+
+}
+
+
+export async function name(req: Request, res: Response) {
+
 }
