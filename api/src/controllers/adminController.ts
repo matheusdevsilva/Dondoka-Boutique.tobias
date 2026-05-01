@@ -1,5 +1,3 @@
-
-
 import type { Request, Response } from "express"
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
@@ -15,7 +13,7 @@ export default async function Login(req: Request, res: Response) {
             })
         }
 
-        const sql = "SELECT * FROM tbl_admin WHERE username = $1"
+        const sql = "SELECT * FROM admins WHERE username = $1"
         const result = await pool.query(sql, [username])
 
         if (result.rows.length === 0) {

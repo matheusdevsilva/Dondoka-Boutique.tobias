@@ -3,6 +3,7 @@ import { useState } from "react"
 import logo from "../assets/logo.jpeg"
 import "./Login.css"
 
+
 export default function LoginAdmin() {
 
     const [username, setUsername] = useState<string>("")
@@ -14,6 +15,9 @@ export default function LoginAdmin() {
 
         try {
 
+            if (!username || !password) {
+                alert("Os campos precisam ser preenchidos")
+            }
             const response = await api.post("/admin/auth", {
                 username,
                 password
