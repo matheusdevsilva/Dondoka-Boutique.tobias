@@ -1,6 +1,11 @@
 import type { RequestHandler } from "express"
 import jwt from "jsonwebtoken"
 
+interface JwtPayload {
+    id: string
+    email: string
+}
+
 const authMiddleware: RequestHandler = (req, res, next) => {
     const authHeader = req.headers.authorization
 
@@ -12,14 +17,13 @@ const authMiddleware: RequestHandler = (req, res, next) => {
 
     const parts = authHeader.split(" ")
 
-    // 🔥 valida formato "Bearer token"
     if (parts.length !== 2) {
         return res.status(401).json({
             message: "Token mal formatado",
         })
     }
 
-    const [scheme, token] = parts
+    const [scheme, token] = parts as [string, string]
 
     if (!/^Bearer$/i.test(scheme)) {
         return res.status(401).json({
@@ -28,17 +32,15 @@ const authMiddleware: RequestHandler = (req, res, next) => {
     }
 
     try {
-        // 🔐 valida e captura payload
         const decoded = jwt.verify(
             token,
             process.env.JWT_SECRET as string
-        )
+        ) as JwtPayload
 
-        // 💡 opcional: salvar usuário no request
         req.user = decoded
 
         return next()
-    } catch (err) {
+    } catch {
         return res.status(401).json({
             message: "Token inválido ou expirado",
         })
