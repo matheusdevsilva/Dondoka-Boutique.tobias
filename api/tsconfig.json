@@ -2,15 +2,22 @@
   "compilerOptions": {
     "module": "nodenext",
     "target": "esnext",
+
+    "rootDir": "src",
+    "outDir": "dist",
+
     "typeRoots": [
       "./node_modules/@types",
       "./src/@types"
     ],
+
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
+
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
+
     "strict": true,
     "jsx": "react-jsx",
     "verbatimModuleSyntax": true,
@@ -19,7 +26,5 @@
     "moduleDetection": "force",
     "skipLibCheck": true
   },
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }
