@@ -13,7 +13,7 @@
   "license": "ISC",
   "author": "matheusdevsilva",
   "type": "module",
-  "main": "index.ts",
+  "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
