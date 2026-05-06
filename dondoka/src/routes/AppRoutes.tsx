@@ -20,7 +20,7 @@ export default function AppRoutes() {
                         </AdminRoute>
                     }
                 />
-                
+
             </Routes>
         </BrowserRouter>
 

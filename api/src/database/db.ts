@@ -23,7 +23,7 @@ if (!process.env.DATABASE_URL_PRIVATE) {
 }
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL_PRIVATE,
+  connectionString: process.env.DATABASE_URL_PUBLIC,
   ssl: {
     rejectUnauthorized: false,
   },

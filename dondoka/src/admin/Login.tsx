@@ -2,13 +2,14 @@ import api from "../services/api"
 import { useState } from "react"
 import logo from "../assets/logo.jpeg"
 import "./Login.css"
+import { useNavigate } from "react-router-dom";
 
 
 export default function LoginAdmin() {
 
     const [username, setUsername] = useState<string>("")
     const [password, setPassword] = useState<string>("")
-
+    const navigate = useNavigate();
     async function handleSubmit(e: React.FormEvent) {
 
         e.preventDefault()
@@ -17,12 +18,17 @@ export default function LoginAdmin() {
 
             if (!username || !password) {
                 alert("Os campos precisam ser preenchidos")
+                return; // <-- faltava isso
             }
             const response = await api.post("/admin/auth", {
                 username,
                 password
             })
-            console.log(response.data)
+
+            localStorage.setItem("token", response.data.token);
+            localStorage.setItem("user", JSON.stringify(response.data.user));
+
+            navigate("/admin/dashboard")
 
         } catch (error) {
 
@@ -83,7 +89,7 @@ export default function LoginAdmin() {
 
                         </div>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <button type="submit">
+                            <button type="submit" className="bnt-login">
                                 Entrar
                             </button>
                         </div>

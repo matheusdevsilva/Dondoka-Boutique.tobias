@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
+
+
 .container-main-login {
     display: flex;
     height: 100vh;
@@ -128,7 +130,7 @@
 }
 
 /* botão */
-button {
+.bnt-login {
     margin-top: 20px;
     padding: 14px;
     border: none;
@@ -143,7 +145,7 @@ button {
     transition: all 0.25s ease;
 }
 
-button:hover {
+.bnt-login:hover {
     background: #c91d77;
     transform: translateY(-2px);
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);

@@ -13,7 +13,7 @@ export async function Login(req: Request, res: Response) {
             })
         }
 
-        const sql = "SELECT * FROM admins WHERE username = $1"
+        const sql = "SELECT * FROM admin WHERE username = $1"
         const result = await pool.query(sql, [username])
 
         if (result.rows.length === 0) {
@@ -51,6 +51,7 @@ export async function Login(req: Request, res: Response) {
             token,
             user: {
                 id: user.id,
+                role: user.role,
                 username: user.username,
             },
         })
@@ -65,11 +66,70 @@ export async function Login(req: Request, res: Response) {
 
 
 
-export async function CreateAdmin() {
+export async function getAdmins(req: Request, res: Response) {
+    try {
+        const result = await pool.query("")
+    } catch (error) {
 
+    }
+}
+
+export async function getAdminsById(req: Request, res: Response) {
+    try {
+        const id = req.body
+        const result = await pool.query("select * from admins  where = $1", [id])
+
+    } catch (error) {
+
+    }
+}
+
+export async function CreateAdmin(req: Request, res: Response) {
+    try {
+        const { name, username, email, password } = req.body
+
+
+        const hashedPassword = await bcrypt.hash(password, 10)
+
+        const result = await pool.query(
+            `INSERT INTO admin (name,username  email, password)
+             VALUES ($1, $2, $3,$4)
+             RETURNING id, name, email, role`,
+            [name, username, email, hashedPassword]
+        )
+
+        return res.status(201).json({
+            success: true,
+            data: result.rows[0]
+        })
+
+    } catch (error) {
+        console.error(error)
+        return res.status(500).json({ message: "Erro ao criar admin" })
+    }
 }
 
 
-export async function name(req: Request, res: Response) {
+export async function DeleteAdmin(req: Request, res: Response) {
+    try {
+        const { id } = req.params
 
+        const result = await pool.query(
+            "DELETE FROM admin WHERE id = $1 RETURNING id",
+            [id]
+        )
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "Admin não encontrado" })
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Admin deletado com sucesso"
+        })
+
+    } catch (error) {
+        console.error(error)
+        return res.status(500).json({ message: "Erro ao deletar admin" })
+    }
 }

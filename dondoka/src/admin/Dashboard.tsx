@@ -2,18 +2,25 @@
 
 
 
-
-export default async function Dashboard() {
-    const username = "Cristiane"
+export default function Dashboard() {
 
     return (
         <>
             <div>
-                <h4>Bem-vinda de volta {username}</h4>
+                <div>
+                    <span>Produtos</span>
+                </div>
+                <div>
+                    <span>Cliente</span>
+                </div>
+                <div>
+                    <span>Pedidos</span>
+                </div>
             </div>
-            <div className="containe-card">
+            <div>
+                <h3></h3>
+            </div>
 
-            </div>
         </>
     )
 }

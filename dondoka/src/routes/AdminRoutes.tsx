@@ -1,12 +1,28 @@
-import { Navigate } from "react-router-dom"
-
+import { useState } from "react";
+import HeaderAdmin from "../admin/components/HeaderAdmin";
+import SidebarAdmin from "../admin/components/SidebarAdmin";
+import "../admin/components/LayoutAdmin.css"
 export default function AdminRoute({ children }: any) {
+    const [collapsed, setCollapsed] = useState(false);
 
-    const token = localStorage.getItem("token")
+    const toggleSidebar = () => {
+        setCollapsed(!collapsed);
+    };
 
-    if (!token) {
-        return <Navigate to="/admin/login" />
-    }
+    return (
+        <div className="admin-layout">
 
-    return children
+            <SidebarAdmin collapsed={collapsed} />
+
+            <div className={`admin-main ${collapsed ? "collapsed" : ""}`}>
+
+                <HeaderAdmin toggleSidebar={toggleSidebar} />
+
+                <main className="admin-content">
+                    {children}
+                </main>
+
+            </div>
+        </div>
+    );
 }

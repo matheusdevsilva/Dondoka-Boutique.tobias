@@ -1,7 +1,13 @@
 import Router from "express";
 import { Login, CreateAdmin } from "../controllers/adminController.js";
 import authMiddleware from "../middleware/authMiddleware.js"
-import { getProducts, getProductsById, createNewProducts, DeleteProducts } from "../controllers/productsController.js"
+import {
+    getProducts,
+    getProductsById,
+    createNewProducts,
+    DeleteProducts,
+    getProductsByCategory
+} from "../controllers/productsController.js"
 
 
 const router = Router()
@@ -16,11 +22,14 @@ router.post("/admin/products/add/", authMiddleware, createNewProducts)
 
 router.delete("/admin/products/delete/:id", authMiddleware, DeleteProducts)
 
-router.put("/admin/product/edit/{id}", authMiddleware)
+router.put("/admin/product/edit/:id", authMiddleware)
 
 router.post("/admin/auth", Login)
 
-router.post("/admin/users/admin/add", authMiddleware, CreateAdmin)
+
+
+router.post("/admin/users/add", authMiddleware, CreateAdmin)
+
 
 router.get("/admin", authMiddleware, (req, res) => {
     res.json({
@@ -40,6 +49,7 @@ router.get("/products/", getProducts)
 
 router.get("/product/:id", getProductsById)
 
+router.get("/products/categoria=:categoria", getProductsByCategory)
 
 
 export default router
