@@ -65,6 +65,7 @@ export default function LoginAdmin() {
                             <input
                                 type="text"
                                 placeholder="Usuario"
+                                className="input-login"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                             />
@@ -72,6 +73,7 @@ export default function LoginAdmin() {
                             <input
                                 type="password"
                                 placeholder="Senha"
+                                className="input-login"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                             />

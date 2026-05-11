@@ -188,3 +188,90 @@ export async function getProductsByCategory(req: Request, res: Response) {
         res.status(500).json({ message: "Erro ao filtrar" })
     }
 }
+
+
+
+export async function getCategoria(req: Request, res: Response) {
+    try {
+        const result = await pool.query("SELECT * FROM categories")
+        return res.status(200).json({
+            success: true,
+            data: result.rows
+        })
+    } catch (error) {
+        console.error("Erro ao buscar produtos:", error)
+
+        return res.status(500).json({
+            success: false,
+            message: "Erro interno"
+        })
+    }
+}
+
+export async function createCategoria(req: Request, res: Response) {
+    try {
+        const { name } = req.body;
+
+        if (!name) {
+            return res.status(400).json({
+                success: false,
+                message: "Nome é obrigatório"
+            });
+        }
+
+        const result = await pool.query(
+            "INSERT INTO categories (name) VALUES ($1) RETURNING *",
+            [name]
+        );
+
+        return res.status(201).json({
+            success: true,
+            data: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error("Erro ao criar categoria:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Erro interno"
+        });
+    }
+}
+export async function deleteCategoriaById(req: Request, res: Response) {
+    try {
+        const { id } = req.params;
+
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: "ID é obrigatório"
+            });
+        }
+
+        const result = await pool.query(
+            "DELETE FROM categories WHERE id = $1 RETURNING *",
+            [id]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Categoria não encontrada"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Categoria deletada com sucesso"
+        });
+
+    } catch (error) {
+        console.error("Erro ao deletar categoria:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Erro interno"
+        });
+    }
+}

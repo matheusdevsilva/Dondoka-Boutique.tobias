@@ -1,0 +1,86 @@
+.container-grid-dashboard {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    padding: 20px;
+}
+
+.card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+}
+
+.card span {
+    color: #777;
+    font-size: 14px;
+}
+
+.card strong {
+    font-size: 28px;
+    color: #111;
+}
+
+
+
+.dashboard-tables {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding: 0 20px 20px;
+}
+
+.table-card {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.table-card h4 {
+    margin-bottom: 15px;
+    font-size: 16px;
+    color: #222;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 400px;
+}
+
+th, td {
+    text-align: left;
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+}
+
+th {
+    color: #555;
+    font-weight: 600;
+}
+
+@media (max-width: 1100px) {
+    .container-grid-dashboard {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .dashboard-tables {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 700px) {
+    .container-grid-dashboard {
+        grid-template-columns: 1fr;
+    }
+}

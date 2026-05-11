@@ -6,7 +6,10 @@ import {
     getProductsById,
     createNewProducts,
     DeleteProducts,
-    getProductsByCategory
+    getProductsByCategory,
+    getCategoria,
+    deleteCategoriaById,
+    createCategoria
 } from "../controllers/productsController.js"
 
 
@@ -18,13 +21,24 @@ router.get("/admin/products", authMiddleware, getProducts)
 
 router.get("/admin/product/:id", authMiddleware, getProductsById)
 
+router.get("/admin/categories/", authMiddleware, getCategoria)
+
+
+
+router.post("/admin/auth", Login)
+
 router.post("/admin/products/add/", authMiddleware, createNewProducts)
+
+router.post("/admin/categories/add", authMiddleware, createCategoria)
+
 
 router.delete("/admin/products/delete/:id", authMiddleware, DeleteProducts)
 
+router.delete("/admin/categories/delete/:id", authMiddleware, deleteCategoriaById)
+
+
 router.put("/admin/product/edit/:id", authMiddleware)
 
-router.post("/admin/auth", Login)
 
 
 

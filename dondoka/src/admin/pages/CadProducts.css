@@ -1,0 +1,276 @@
+/* =========================
+   LAYOUT GERAL
+========================= */
+.product-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    padding: 20px;
+}
+
+/* responsivo */
+@media (max-width: 900px) {
+    .product-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =========================
+   PREVIEW BOX
+========================= */
+.container-preview {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.preview-empty {
+    height: 260px;
+    border: 2px dashed #ddd;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #888;
+}
+
+/* =========================
+   CAROUSEL
+========================= */
+.carousel {
+    position: relative;
+}
+
+.carousel img {
+    width: 100%;
+    height: 260px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+/* botões do carousel */
+.carousel-controls {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.carousel-controls button {
+    background: #eb268f;
+    border: none;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.carousel-controls button:hover {
+    opacity: 0.85;
+}
+
+/* =========================
+   THUMBNAILS
+========================= */
+.thumbnails {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+/* thumbnail individual */
+.thumb {
+    position: relative;
+    width: 60px;
+    height: 60px;
+}
+
+/* imagem thumbnail */
+.thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: 0.2s;
+}
+
+/* ativa */
+.thumb.active img {
+    border-color: #eb268f;
+    transform: scale(1.05);
+}
+
+/* botão remover */
+.thumb button {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: none;
+    background: #e74c3c;
+    color: white;
+    font-size: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.preview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.preview-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f7f7f7;
+    padding: 10px;
+    border-radius: 10px;
+    transition: 0.2s;
+}
+
+.preview-item:hover {
+    transform: translateY(-2px);
+    background: #f1f1f1;
+}
+
+.preview-item svg {
+    color: #eb268f;
+}
+
+.preview-item span {
+    font-size: 12px;
+    color: #777;
+    display: block;
+}
+
+.preview-item strong {
+    font-size: 14px;
+    color: #333;
+}
+
+/* =========================
+   FORM
+========================= */
+.container-forms-products {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* inputs */
+.container-input-products {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.container-input-products label,
+.container-grid-products label {
+    font-size: 14px;
+    color: #555;
+}
+
+.container-input-products input,
+.container-input-products select {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+    transition: 0.2s;
+}
+
+.container-input-products input:focus,
+.container-grid-products input:focus,
+.container-input-products .input-decription-products:focus {
+    border-color: #eb268f;
+}
+
+.container-grid-products {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    width: 100%;
+}
+
+.input-products {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+    transition: 0.2s;
+    background: white;
+}
+
+.input-products:focus {
+    border-color: #eb268f;
+}
+
+/* responsivo */
+@media (max-width: 700px) {
+    .container-grid-products {
+        grid-template-columns: 1fr;
+    }
+}
+
+.container-grid-products input {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+    transition: 0.2s;
+}
+
+.input-description-products {
+    min-height: 120px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+}
+
+/* =========================
+   BOTÃO
+========================= */
+.bnt-cad-product {
+    background: #eb268f;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+    font-weight: 500;
+}
+
+.bnt-cad-product:hover {
+    background: transparent;
+    transition: 0.4s;
+    color: #eb268f;
+    border: 1px solid #eb268f;
+    transform: translateY(-2px);
+}
+
+/* =========================
+   HOVER EFFECTS GERAIS
+========================= */
+button {
+    transition: 0.2s;
+}
