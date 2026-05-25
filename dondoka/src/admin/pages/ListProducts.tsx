@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import "./ListProducts.css";
+import { useNavigate } from "react-router-dom";
+import api from "../../services/api";
 
 interface Product {
     id: string;
@@ -10,50 +12,63 @@ interface Product {
     category_id?: number;
     brand?: string;
     gender?: string;
-    image_url: string;
+    image_url?: string;
     is_active: boolean;
     created_at?: string;
 }
 
+type FilterType = "all" | "active" | "inactive";
+
 export default function ListProducts() {
+
+    const navigate = useNavigate();
 
     const [products, setProducts] = useState<Product[]>([]);
     const [search, setSearch] = useState("");
-    const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
+    const [filter, setFilter] = useState<FilterType>("all");
+    const [loading, setLoading] = useState(true);
 
+    async function getProducts() {
+        try {
+            setLoading(true);
+
+            const response = await api.get("/admin/products");
+
+            setProducts(response.data.data);
+
+        } catch (error) {
+            console.error("Erro ao buscar produtos:", error);
+        } finally {
+            setLoading(false);
+        }
+    }
+    async function deleteProduct(id: number) {
+        try {
+        } catch (error) {
+
+        }
+    }
+    function handleEdit(id: string) {
+        navigate(`/admin/products/edit/${id}`);
+    }
+
+    function getCategoria() {
+        try {
+            
+        } catch (error) {
+            
+        }
+    }
     useEffect(() => {
-        const data: Product[] = [
-            {
-                id: "1",
-                name: "Produto A",
-                description: "Descrição do produto A",
-                price: 100,
-                discount_price: 80,
-                brand: "Nike",
-                gender: "unisex",
-                category_id: 1,
-                image_url: "https://via.placeholder.com/300",
-                is_active: true,
-                created_at: "2024-01-01"
-            },
-            {
-                id: "2",
-                name: "Produto B",
-                price: 200,
-                image_url: "https://via.placeholder.com/300",
-                is_active: false,
-                created_at: "2024-02-01"
-            }
-        ];
-
-        setProducts(data);
+        getProducts();
+        getCategoria();
     }, []);
 
     const filteredProducts = products
-        .filter(p =>
+        .filter((p) =>
             p.name.toLowerCase().includes(search.toLowerCase())
         )
-        .filter(p =>
+        .filter((p) =>
             filter === "all"
                 ? true
                 : filter === "active"
@@ -64,10 +79,11 @@ export default function ListProducts() {
     return (
         <div className="products-page">
 
-            {/* 🔎 filtros */}
+            {/* filtros */}
             <div className="products-controls">
 
                 <input
+                    type="text"
                     placeholder="Buscar produto..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
@@ -75,7 +91,11 @@ export default function ListProducts() {
 
                 <select
                     value={filter}
-                    onChange={(e) => setFilter(e.target.value as any)}
+                    onChange={(e) =>
+                        setFilter(
+                            e.target.value as FilterType
+                        )
+                    }
                 >
                     <option value="all">Todos</option>
                     <option value="active">Ativos</option>
@@ -84,59 +104,129 @@ export default function ListProducts() {
 
             </div>
 
-            {/* 📦 grid */}
-            <div className="products-grid">
+            {/* loading */}
+            {loading && (
+                <p>Carregando produtos...</p>
+            )}
 
-                {filteredProducts.map(product => (
-                    <div key={product.id} className="product-card">
+            {/* grid */}
+            {!loading && (
+                <div className="products-grid">
 
-                        <img src={product.image_url} alt={product.name} />
+                    {filteredProducts.length === 0 && (
+                        <p>Nenhum produto encontrado.</p>
+                    )}
 
-                        <h3>{product.name}</h3>
+                    {filteredProducts.map((product) => (
+                        <div
+                            key={product.id}
+                            className="product-card"
+                        >
 
-                        {product.description && (
-                            <p className="description">
-                                {product.description}
-                            </p>
-                        )}
+                            <img
+                                src={
+                                    product.image_url ||
+                                    "/placeholder.png"
+                                }
+                                alt={product.name}
+                            />
 
-                        <div className="prices">
-                            <span className="price">
-                                R$ {product.price}
+                            <h3>{product.name}</h3>
+
+                            {product.description && (
+                                <p className="description">
+                                    {product.description}
+                                </p>
+                            )}
+
+                            <div className="prices">
+
+                                <span className="price">
+                                    R$
+                                    {product.price.toLocaleString(
+                                        "pt-BR",
+                                        {
+                                            style: "currency",
+                                            currency: "BRL"
+                                        }
+                                    )}
+                                </span>
+
+                                {product.discount_price && (
+                                    <span className="discount">
+                                        {product.discount_price.toLocaleString(
+                                            "pt-BR",
+                                            {
+                                                style: "currency",
+                                                currency: "BRL"
+                                            }
+                                        )}
+                                    </span>
+                                )}
+
+                            </div>
+
+                            <div className="meta">
+
+                                {product.brand && (
+                                    <span>
+                                        Marca: {product.brand}
+                                    </span>
+                                )}
+
+                                {product.gender && (
+                                    <span>
+                                        Gênero: {product.gender}
+                                    </span>
+                                )}
+
+                                {product.category_id && (
+                                    <span>
+                                        Categoria: {product.category_id}
+                                    </span>
+                                )}
+
+                            </div>
+
+                            <span
+                                className={
+                                    product.is_active
+                                        ? "active"
+                                        : "inactive"
+                                }
+                            >
+                                {product.is_active
+                                    ? "Ativo"
+                                    : "Inativo"}
                             </span>
 
-                            {product.discount_price && (
-                                <span className="discount">
-                                    R$ {product.discount_price}
-                                </span>
+                            {product.created_at && (
+                                <small>
+                                    Criado em:{" "}
+                                    {new Date(
+                                        product.created_at
+                                    ).toLocaleDateString("pt-BR")}
+                                </small>
                             )}
+
+                            <div className="actions">
+
+                                <button onClick={() => handleEdit(product.id)}>
+                                    Editar
+                                </button>
+
+                                <button>
+                                    Deletar
+                                </button>
+
+                            </div>
+
                         </div>
+                    ))}
 
-                        <div className="meta">
-                            {product.brand && <span>Marca: {product.brand}</span>}
-                            {product.gender && <span>Gênero: {product.gender}</span>}
-                            {product.category_id && <span>Categoria: {product.category_id}</span>}
-                        </div>
+                </div>
+            )}
 
-                        <span className={product.is_active ? "active" : "inactive"}>
-                            {product.is_active ? "Ativo" : "Inativo"}
-                        </span>
-
-                        {product.created_at && (
-                            <small>
-                                Criado: {new Date(product.created_at).toLocaleDateString()}
-                            </small>
-                        )}
-
-                        <div className="actions">
-                            <button>Editar</button>
-                            <button>Deletar</button>
-                        </div>
-
-                    </div>
-                ))}
-
-            </div>
         </div>
     );
 }

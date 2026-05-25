@@ -24,6 +24,7 @@ export default function CadProducts() {
     const [color, setColor] = useState("");
     const [size, setSize] = useState("");
     const [gender, setGender] = useState("");
+    const [status, setStatus] = useState("")
 
 
     const [files, setFiles] = useState<File[]>([]);
@@ -107,16 +108,22 @@ export default function CadProducts() {
 
         formData.append("name", name);
         formData.append("price", String(price));
-
+        formData.append("stock", String(stock));
+        formData.append("size", String(size));
+        formData.append("categories", String(categoryId));
+        formData.append("gender", gender);
+        formData.append("color", color);
+        formData.append("description", description);
 
         files.forEach(file => {
             formData.append("images", file);
         });
 
-        await api.post("/admin/products", formData, {
+        await api.post("/admin/products/add/", formData, {
             headers: {
                 "Content-Type": "multipart/form-data"
             }
+            
         });
 
         alert("Produto cadastrado!");
@@ -248,7 +255,7 @@ export default function CadProducts() {
                             <Package size={16} />
                             <div>
                                 <span>Status</span>
-                                <strong>Rascunho</strong>
+                                <strong>{status}</strong>
                             </div>
                         </div>
 
@@ -356,7 +363,7 @@ export default function CadProducts() {
                     <div className="container-input-products">
                         <label>Tamanho</label>
 
-                        <select className="input-products">
+                        <select className="input-products" onChange={(e) => setSize(e.target.value)}>
                             <option>Selecione</option>
                             <option>P</option>
                             <option>M</option>
@@ -387,6 +394,17 @@ export default function CadProducts() {
                         onChange={handleFiles}
                     />
                 </div>
+                <div className="container-input-products">
+                    <label>Status</label>
+                    <select className="input-products" onChange={(e) => setStatus(e.target.value)}>
+                        <option>Selecione</option>
+                        <option>Ativo</option>
+                        <option>Inativo</option>
+                        <option>Rascunho</option>
+                    </select>
+                </div>
+
+
 
                 {/* 🚀 BOTÃO */}
                 <button className="bnt-cad-product">

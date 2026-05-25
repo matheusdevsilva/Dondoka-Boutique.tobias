@@ -133,3 +133,15 @@ export async function DeleteAdmin(req: Request, res: Response) {
         return res.status(500).json({ message: "Erro ao deletar admin" })
     }
 }
+
+export async function EditAdmin(req: Request, res: Response) {
+    try {
+        const {id} = req.body 
+        
+
+        const result = await pool.query("select * from  admin where = $1",[id])
+
+    } catch (error) {
+        
+    }
+}

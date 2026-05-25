@@ -1,6 +1,7 @@
 import type { RequestHandler } from "express"
 import jwt from "jsonwebtoken"
 
+
 interface JwtPayload {
     id: string
     email: string

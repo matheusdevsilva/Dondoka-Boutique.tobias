@@ -2,6 +2,7 @@ import { Search, ShoppingBag, Menu, X } from "lucide-react"
 import "../styles/Header.css"
 import logo from "../assets/logo.jpeg"
 import { useState } from "react"
+import { Link } from "react-router-dom"
 
 interface CartItem {
     id: number
@@ -68,7 +69,7 @@ export default function Header() {
                 <nav className="container-links">
                     <ul>
                         <li>Início</li>
-                        <li>Coleções</li>
+                        <li><Link to="/colecao">Coleções</Link></li>
                         <li>Novidades</li>
                         <li>Contato</li>
                     </ul>

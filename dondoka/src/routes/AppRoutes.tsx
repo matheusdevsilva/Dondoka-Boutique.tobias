@@ -7,6 +7,7 @@ import HomePage from "../pages/HomePage"
 import CadProducts from "../admin/pages/CadProducts"
 import ListProducts from "../admin/pages/ListProducts"
 import Categories from "../admin/pages/Categories"
+import Products from "../pages/Products"
 
 export default function AppRoutes() {
 
@@ -14,7 +15,9 @@ export default function AppRoutes() {
         <BrowserRouter>
             <Routes>
                 <Route path="/" element={<HomePage />} />
+                <Route path="/colecao" element={<Products />} />
                 <Route path="/admin/login" element={<Login />} />
+
 
                 <Route element={<AdminRoute />}>
                     <Route path="/admin/dashboard" element={<Dashboard />} />
