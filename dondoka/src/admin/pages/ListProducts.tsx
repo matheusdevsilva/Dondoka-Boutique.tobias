@@ -27,6 +27,8 @@ export default function ListProducts() {
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState<FilterType>("all");
     const [loading, setLoading] = useState(true);
+    const [openDeleteModal, setOpenDeleteModal] = useState(false);
+    const [selectedId, setSelectedId] = useState<number | null>(null);
 
     async function getProducts() {
         try {
@@ -42,10 +44,21 @@ export default function ListProducts() {
             setLoading(false);
         }
     }
-    async function deleteProduct(id: number) {
-        try {
-        } catch (error) {
+    async function confirmDelete() {
+        if (!selectedId) return;
 
+        try {
+            await api.delete(`/admin/products/delete/${selectedId}`);
+
+            setProducts((prev) =>
+                prev.filter((p) => Number(p.id) !== selectedId)
+            );
+
+            setOpenDeleteModal(false);
+            setSelectedId(null);
+
+        } catch (error) {
+            console.error("Erro ao deletar produto:", error);
         }
     }
     function handleEdit(id: string) {
@@ -54,9 +67,9 @@ export default function ListProducts() {
 
     function getCategoria() {
         try {
-            
+
         } catch (error) {
-            
+
         }
     }
     useEffect(() => {
@@ -215,7 +228,12 @@ export default function ListProducts() {
                                     Editar
                                 </button>
 
-                                <button>
+                                <button
+                                    onClick={() => {
+                                        setSelectedId(Number(product.id));
+                                        setOpenDeleteModal(true);
+                                    }}
+                                >
                                     Deletar
                                 </button>
 
@@ -224,6 +242,34 @@ export default function ListProducts() {
                         </div>
                     ))}
 
+                </div>
+            )}
+
+            {openDeleteModal && (
+                <div
+                    className="modal-overlay"
+                    onClick={() => setOpenDeleteModal(false)}
+                >
+                    <div
+                        className="modal-content delete"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h3>Tem certeza?</h3>
+
+                        <p>Essa ação não pode ser desfeita.</p>
+
+                        <div className="modal-actions">
+
+                            <button onClick={() => setOpenDeleteModal(false)}>
+                                Cancelar
+                            </button>
+
+                            <button onClick={confirmDelete}>
+                                Sim, deletar
+                            </button>
+
+                        </div>
+                    </div>
                 </div>
             )}
 

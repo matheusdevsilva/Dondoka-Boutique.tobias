@@ -6,7 +6,6 @@ import {
     Package,
     Ruler,
     Palette,
-    Hash,
     Tag,
     Users,
     Boxes
