@@ -1,7 +1,8 @@
 import 'dotenv/config'
+import { getDatabaseUrl } from './db-url.mjs'
 import pg from 'pg'
 
-const base = process.env.DATABASE_URL_PUBLIC
+const base = getDatabaseUrl()
 if (!base) process.exit(1)
 
 const variants = [

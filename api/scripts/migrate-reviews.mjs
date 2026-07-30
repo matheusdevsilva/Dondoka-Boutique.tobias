@@ -1,11 +1,8 @@
 import 'dotenv/config'
+import { getDatabaseUrl } from './db-url.mjs'
 import pg from 'pg'
 
-const url = process.env.DATABASE_URL_PUBLIC
-if (!url) {
-  console.error('Sem DATABASE_URL_PUBLIC')
-  process.exit(1)
-}
+const url = getDatabaseUrl()
 
 const pool = new pg.Pool({
   connectionString: url,

@@ -1,13 +1,10 @@
 import 'dotenv/config'
+import { getDatabaseUrl } from './db-url.mjs'
 import net from 'net'
 import pg from 'pg'
 import dns from 'dns/promises'
 
-const url = process.env.DATABASE_URL_PUBLIC
-if (!url) {
-  console.error('Sem DATABASE_URL_PUBLIC')
-  process.exit(1)
-}
+const url = getDatabaseUrl()
 
 const parsed = new URL(url)
 console.log('Host:', parsed.hostname)
