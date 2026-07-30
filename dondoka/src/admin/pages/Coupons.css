@@ -1,0 +1,200 @@
+.coupons-page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    animation: adminPageIn 0.35s ease both;
+}
+
+@keyframes adminPageIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.coupon-card {
+    background: #fff;
+    border: 1px solid #efe6ea;
+    padding: 18px;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    transition: border-color 0.2s, transform 0.2s;
+}
+
+.coupon-card:hover {
+    border-color: #f7cfe3;
+    transform: translateY(-2px);
+}
+
+.coupons-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.coupons-header h1 {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 2.2rem;
+    font-weight: 500;
+}
+
+.coupons-header p {
+    color: #8a7380;
+    font-size: 13px;
+}
+
+.coupons-header button,
+.modal-actions button:last-child {
+    padding: 12px 18px;
+    border: none;
+    background: #eb268f;
+    color: #fff;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.coupons-header button:hover,
+.modal-actions button:last-child:hover {
+    background: #2b1a22;
+}
+
+.coupons-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.coupon-card h3 {
+    margin: 0 0 4px;
+    font-size: 1.1rem;
+    letter-spacing: 0.08em;
+}
+
+.coupon-card p {
+    margin: 0;
+    color: #5a4450;
+    font-size: 14px;
+}
+
+.coupon-card small {
+    color: #8a7380;
+    font-size: 12px;
+}
+
+.coupon-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.coupon-actions span {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+}
+
+.coupon-actions span.on {
+    background: #fff0f7;
+    color: #eb268f;
+}
+
+.coupon-actions span.off {
+    background: #f3f3f3;
+    color: #777;
+}
+
+.coupon-actions button {
+    padding: 8px 12px;
+    border: 1px solid #2b1a22;
+    background: #fff;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.coupon-actions button.danger {
+    border-color: #c0392b;
+    color: #c0392b;
+}
+
+.coupons-empty,
+.coupons-error {
+    color: #8a7380;
+}
+
+.coupons-error {
+    color: #c0392b;
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(43, 26, 34))), 0.45);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+.modal-content {
+    background: #fff;
+    padding: 24px;
+    width: min(420px, 90vw);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border: 1px solid #efe6ea;
+}
+
+.modal-content h3 {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 1.6rem;
+    font-weight: 500;
+}
+
+.modal-content label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8a7380;
+}
+
+.modal-content input,
+.modal-content select {
+    padding: 12px 14px;
+    border: 1px solid #efe6ea;
+    font-family: inherit;
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 14px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.modal-actions button {
+    padding: 10px 14px;
+    border: 1px solid #2b1a22;
+    background: #fff;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}

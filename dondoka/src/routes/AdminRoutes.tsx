@@ -4,6 +4,20 @@ import HeaderAdmin from "../admin/components/HeaderAdmin";
 import SidebarAdmin from "../admin/components/SidebarAdmin";
 import "../admin/components/LayoutAdmin.css";
 
+function isTokenValid(token: string): boolean {
+    try {
+        const parts = token.split(".");
+        if (parts.length !== 3 || !parts[1]) return false;
+
+        const payload = JSON.parse(atob(parts[1]));
+        if (!payload.exp) return true;
+
+        return payload.exp * 1000 > Date.now();
+    } catch {
+        return false;
+    }
+}
+
 export default function AdminRoute() {
 
     const [collapsed, setCollapsed] = useState(false);
@@ -16,14 +30,14 @@ export default function AdminRoute() {
     useEffect(() => {
         const token = localStorage.getItem("token");
 
-       
-        if (!token) {
+        if (!token || !isTokenValid(token)) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
             setAuth(false);
             return;
         }
 
         setAuth(true);
-
     }, []);
 
     if (auth === null) {

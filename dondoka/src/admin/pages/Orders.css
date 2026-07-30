@@ -1,0 +1,185 @@
+.orders-page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    animation: adminPageIn 0.35s ease both;
+}
+
+@keyframes adminPageIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.orders-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.orders-header h1 {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 2.2rem;
+    font-weight: 500;
+}
+
+.orders-header p {
+    color: #8a7380;
+    font-size: 13px;
+}
+
+.orders-header select {
+    padding: 12px 14px;
+    border: 1px solid #efe6ea;
+    background: #fff;
+    font-family: inherit;
+}
+
+.orders-header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.orders-header-actions button {
+    padding: 12px 16px;
+    border: 1px solid #2b1a22;
+    background: #fff;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: 0.2s;
+}
+
+.orders-header-actions button:hover {
+    background: #2b1a22;
+    color: #fff;
+}
+
+.order-discount {
+    display: block;
+    color: #eb268f;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.order-card {
+    background: #fff;
+    border: 1px solid #efe6ea;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: border-color 0.2s, transform 0.2s;
+}
+
+.order-card:hover {
+    border-color: #f7cfe3;
+    transform: translateY(-2px);
+}
+
+.order-card-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.order-card-top h3 {
+    font-size: 1.05rem;
+    font-weight: 500;
+}
+
+.order-card-top p {
+    color: #5a4450;
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+.order-card-top small {
+    color: #8a7380;
+    font-size: 12px;
+}
+
+.order-status {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 6px 10px;
+}
+
+.order-status.pending {
+    background: #fff7e8;
+    color: #b7791f;
+}
+
+.order-status.confirmed {
+    background: #fff0f7;
+    color: #eb268f;
+}
+
+.order-status.shipped {
+    background: #eef8f1;
+    color: #2f855a;
+}
+
+.order-status.cancelled {
+    background: #f4f4f4;
+    color: #777;
+}
+
+.order-items {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid #efe6ea;
+    border-bottom: 1px solid #efe6ea;
+    padding: 12px 0;
+}
+
+.order-items li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 14px;
+}
+
+.order-notes {
+    font-size: 13px;
+    color: #8a7380;
+}
+
+.order-card-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.order-card-bottom strong {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 1.5rem;
+    font-weight: 500;
+}
+
+.order-card-bottom select {
+    padding: 10px 12px;
+    border: 1px solid #efe6ea;
+    font-family: inherit;
+}
+
+.orders-empty {
+    color: #8a7380;
+    padding: 24px 0;
+}

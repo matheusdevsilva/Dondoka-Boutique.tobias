@@ -1,72 +1,221 @@
+.admin-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    animation: dashIn 0.4s ease both;
+}
+
+@keyframes dashIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.dash-header h1 {
+    font-family: var(--font-serif, "Cormorant Garamond", Georgia, serif);
+    font-size: 2.2rem;
+    font-weight: 500;
+    color: #2b1a22;
+}
+
+.dash-header p {
+    color: #8a7380;
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+.dash-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.dash-btn {
+    padding: 12px 18px;
+    border: 1px solid #2b1a22;
+    color: #2b1a22;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: 0.2s;
+}
+
+.dash-btn.primary {
+    background: #eb268f;
+    border-color: #eb268f;
+    color: #fff;
+}
+
+.dash-btn:hover {
+    background: #2b1a22;
+    border-color: #2b1a22;
+    color: #fff;
+}
+
 .container-grid-dashboard {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-    padding: 20px;
+    gap: 16px;
+}
+
+.container-grid-dashboard.secondary {
+    grid-template-columns: repeat(2, 1fr);
 }
 
 .card {
     background: #fff;
-    border-radius: 14px;
-    padding: 20px;
+    border: 1px solid #efe6ea;
+    padding: 22px;
     display: flex;
     flex-direction: column;
     gap: 8px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: border-color 0.2s, transform 0.2s;
 }
 
 .card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+    border-color: #f7cfe3;
+    transform: translateY(-2px);
 }
 
 .card span {
-    color: #777;
-    font-size: 14px;
+    color: #8a7380;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
 }
 
 .card strong {
-    font-size: 28px;
-    color: #111;
+    font-family: var(--font-serif, "Cormorant Garamond", Georgia, serif);
+    font-size: 2rem;
+    font-weight: 500;
+    color: #2b1a22;
 }
-
-
 
 .dashboard-tables {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-    padding: 0 20px 20px;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 16px;
 }
 
 .table-card {
     background: #fff;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    padding: 22px;
+    border: 1px solid #efe6ea;
 }
-.table-card h4 {
-    margin-bottom: 15px;
-    font-size: 16px;
-    color: #222;
+
+.table-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #efe6ea;
 }
+
+.table-card-head h4 {
+    font-family: var(--font-serif, "Cormorant Garamond", Georgia, serif);
+    font-size: 1.4rem;
+    font-weight: 500;
+}
+
+.table-card-head a {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #eb268f;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 400px;
 }
 
 th, td {
     text-align: left;
-    padding: 12px;
-    border-bottom: 1px solid #eee;
-    font-size: 14px;
+    padding: 12px 8px;
+    border-bottom: 1px solid #efe6ea;
+    font-size: 13px;
 }
 
 th {
-    color: #555;
-    font-weight: 600;
+    color: #8a7380;
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.dash-product-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dash-product-cell img {
+    width: 42px;
+    height: 52px;
+    object-fit: cover;
+    background: #fbf8f9;
+}
+
+.dash-badge {
+    display: inline-flex;
+    padding: 4px 8px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.dash-badge.on {
+    background: #fff0f7;
+    color: #eb268f;
+}
+
+.dash-badge.off {
+    background: #f3f3f3;
+    color: #777;
+}
+
+.dash-cat-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dash-cat-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #efe6ea;
+}
+
+.dash-cat-list strong {
+    font-weight: 500;
+}
+
+.dash-cat-list span {
+    color: #8a7380;
+    font-size: 13px;
+}
+
+.dash-empty {
+    color: #8a7380;
+    padding: 20px 0;
 }
 
 @media (max-width: 1100px) {

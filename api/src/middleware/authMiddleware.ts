@@ -4,7 +4,9 @@ import jwt from "jsonwebtoken"
 
 interface JwtPayload {
     id: string
-    email: string
+    username?: string
+    email?: string
+    role?: string
 }
 
 const authMiddleware: RequestHandler = (req, res, next) => {
@@ -39,6 +41,12 @@ const authMiddleware: RequestHandler = (req, res, next) => {
         ) as JwtPayload
 
         req.user = decoded
+
+        if (decoded.role && decoded.role !== "admin") {
+            return res.status(403).json({
+                message: "Acesso restrito a administradores",
+            })
+        }
 
         return next()
     } catch {

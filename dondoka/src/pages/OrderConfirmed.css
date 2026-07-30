@@ -1,0 +1,139 @@
+.order-confirmed-page {
+    min-height: 70vh;
+    padding: clamp(48px, 8vw, 96px) clamp(20px, 4vw, 56px);
+    background:
+        radial-gradient(ellipse 55% 40% at 50% 0%, rgba(235, 38, 143, 0.1), transparent 55%),
+        var(--surface);
+    text-align: center;
+    animation: confirmIn 0.5s ease both;
+}
+
+@keyframes confirmIn {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.order-confirmed-kicker {
+    color: var(--pink);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin: 0 0 12px;
+}
+
+.order-confirmed-page h1 {
+    font-family: var(--font-serif);
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 500;
+    color: var(--brown);
+    margin: 0 0 12px;
+}
+
+.order-confirmed-text {
+    max-width: 480px;
+    margin: 0 auto 28px;
+    color: var(--brown-muted);
+    line-height: 1.7;
+}
+
+.order-confirmed-card {
+    max-width: 420px;
+    margin: 0 auto 28px;
+    text-align: left;
+    background: #fff;
+    border: 1px solid var(--line);
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.order-confirmed-card p {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0;
+    font-size: 14px;
+}
+
+.order-confirmed-card span {
+    color: var(--brown-muted);
+}
+
+.order-confirmed-card ul {
+    list-style: none;
+    padding: 12px 0;
+    margin: 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    color: var(--brown-soft);
+    font-size: 14px;
+}
+
+.order-confirmed-card li + li {
+    margin-top: 6px;
+}
+
+.order-confirmed-total strong {
+    font-family: var(--font-serif);
+    font-size: 1.4rem;
+}
+
+.order-confirmed-warn {
+    max-width: 480px;
+    margin: 0 auto 20px;
+    color: #b7791f;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.order-confirmed-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.order-confirmed-primary,
+.order-confirmed-secondary {
+    min-width: 240px;
+    padding: 14px 20px;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+}
+
+.order-confirmed-primary {
+    background: var(--pink);
+    color: #fff;
+    transition: background 0.2s;
+}
+
+.order-confirmed-primary:hover {
+    background: var(--brown);
+}
+
+.order-confirmed-secondary {
+    border: 1px solid var(--brown);
+    color: var(--brown);
+    transition: 0.2s;
+}
+
+.order-confirmed-secondary:hover {
+    background: var(--brown);
+    color: #fff;
+}
+
+.order-confirmed-actions a:last-child {
+    color: var(--pink);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}

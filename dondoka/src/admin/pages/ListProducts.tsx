@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import "./ListProducts.css";
-import { useNavigate } from "react-router-dom";
-import api from "../../services/api";
+import { Link, useNavigate } from "react-router-dom";
+import api, { resolveImageUrl } from "../../services/api";
+import { formatBRL, productCover, productPrice } from "../../types/product";
 
 interface Product {
     id: string;
@@ -11,21 +12,27 @@ interface Product {
     discount_price?: number;
     category_id?: number;
     brand?: string;
-    gender?: string;
     image_url?: string;
+    images?: string[] | string | null;
     is_active: boolean;
     created_at?: string;
 }
 
-type FilterType = "all" | "active" | "inactive";
+interface Category {
+    id: string | number;
+    name: string;
+}
+
+type FilterType = "all" | "active" | "inactive" | "promo";
 
 export default function ListProducts() {
-
     const navigate = useNavigate();
 
     const [products, setProducts] = useState<Product[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState<FilterType>("all");
+    const [categoryFilter, setCategoryFilter] = useState("all");
     const [loading, setLoading] = useState(true);
     const [openDeleteModal, setOpenDeleteModal] = useState(false);
     const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -33,68 +40,83 @@ export default function ListProducts() {
     async function getProducts() {
         try {
             setLoading(true);
-
-            const response = await api.get("/admin/products");
-
-            setProducts(response.data.data);
-
+            const [productsRes, categoriesRes] = await Promise.all([
+                api.get("/admin/products"),
+                api.get("/admin/categories"),
+            ]);
+            setProducts(productsRes.data.data || []);
+            setCategories(categoriesRes.data.data || []);
         } catch (error) {
             console.error("Erro ao buscar produtos:", error);
         } finally {
             setLoading(false);
         }
     }
+
     async function confirmDelete() {
         if (!selectedId) return;
-
         try {
             await api.delete(`/admin/products/delete/${selectedId}`);
-
             setProducts((prev) =>
                 prev.filter((p) => Number(p.id) !== selectedId)
             );
-
             setOpenDeleteModal(false);
             setSelectedId(null);
-
         } catch (error) {
             console.error("Erro ao deletar produto:", error);
         }
     }
-    function handleEdit(id: string) {
-        navigate(`/admin/products/edit/${id}`);
-    }
 
-    function getCategoria() {
+    async function toggleActive(product: Product) {
+        const next = product.is_active === false;
         try {
-
+            const formData = new FormData();
+            formData.append("is_active", String(next));
+            await api.put(`/admin/product/edit/${product.id}`, formData);
+            setProducts((prev) =>
+                prev.map((p) =>
+                    p.id === product.id ? { ...p, is_active: next } : p
+                )
+            );
         } catch (error) {
-
+            console.error("Erro ao atualizar status:", error);
         }
     }
+
     useEffect(() => {
         getProducts();
-        getCategoria();
     }, []);
 
+    const categoryName = (id?: number) =>
+        categories.find((c) => String(c.id) === String(id))?.name || "—";
+
     const filteredProducts = products
+        .filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
+        .filter((p) => {
+            if (filter === "active") return p.is_active !== false;
+            if (filter === "inactive") return p.is_active === false;
+            if (filter === "promo") return !!p.discount_price;
+            return true;
+        })
         .filter((p) =>
-            p.name.toLowerCase().includes(search.toLowerCase())
-        )
-        .filter((p) =>
-            filter === "all"
+            categoryFilter === "all"
                 ? true
-                : filter === "active"
-                    ? p.is_active
-                    : !p.is_active
+                : String(p.category_id) === categoryFilter
         );
 
     return (
         <div className="products-page">
+            <div className="products-page-header">
+                <div>
+                    <h1>Produtos</h1>
+                    <p>{filteredProducts.length} itens</p>
+                </div>
+                <Link to="/admin/produtos/novo" className="products-add-btn">
+                    Novo produto
+                </Link>
+            </div>
 
-            {/* filtros */}
             <div className="products-controls">
-
                 <input
                     type="text"
                     placeholder="Buscar produto..."
@@ -104,144 +126,93 @@ export default function ListProducts() {
 
                 <select
                     value={filter}
-                    onChange={(e) =>
-                        setFilter(
-                            e.target.value as FilterType
-                        )
-                    }
+                    onChange={(e) => setFilter(e.target.value as FilterType)}
                 >
                     <option value="all">Todos</option>
                     <option value="active">Ativos</option>
                     <option value="inactive">Inativos</option>
+                    <option value="promo">Promoções</option>
                 </select>
 
+                <select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                >
+                    <option value="all">Todas categorias</option>
+                    {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                            {cat.name}
+                        </option>
+                    ))}
+                </select>
             </div>
 
-            {/* loading */}
-            {loading && (
-                <p>Carregando produtos...</p>
-            )}
+            {loading && <p className="products-status">Carregando produtos...</p>}
 
-            {/* grid */}
             {!loading && (
                 <div className="products-grid">
-
                     {filteredProducts.length === 0 && (
-                        <p>Nenhum produto encontrado.</p>
+                        <p className="products-status">Nenhum produto encontrado.</p>
                     )}
 
                     {filteredProducts.map((product) => (
-                        <div
-                            key={product.id}
-                            className="product-card"
-                        >
-
+                        <div key={product.id} className="product-card">
                             <img
-                                src={
-                                    product.image_url ||
-                                    "/placeholder.png"
-                                }
+                                src={resolveImageUrl(productCover(product))}
                                 alt={product.name}
                             />
 
-                            <h3>{product.name}</h3>
-
-                            {product.description && (
-                                <p className="description">
-                                    {product.description}
-                                </p>
-                            )}
-
-                            <div className="prices">
-
-                                <span className="price">
-                                    R$
-                                    {product.price.toLocaleString(
-                                        "pt-BR",
-                                        {
-                                            style: "currency",
-                                            currency: "BRL"
-                                        }
-                                    )}
+                            <div className="product-card-body">
+                                <span
+                                    className={
+                                        product.is_active !== false
+                                            ? "active"
+                                            : "inactive"
+                                    }
+                                >
+                                    {product.is_active !== false ? "Ativo" : "Inativo"}
                                 </span>
 
-                                {product.discount_price && (
-                                    <span className="discount">
-                                        {product.discount_price.toLocaleString(
-                                            "pt-BR",
-                                            {
-                                                style: "currency",
-                                                currency: "BRL"
-                                            }
-                                        )}
-                                    </span>
-                                )}
+                                <h3>{product.name}</h3>
+                                <p className="meta-line">{categoryName(product.category_id)}</p>
 
+                                <div className="prices">
+                                    <span className="price">
+                                        {formatBRL(productPrice(product))}
+                                    </span>
+                                    {product.discount_price && (
+                                        <span className="discount">
+                                            {formatBRL(Number(product.price))}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="actions">
+                                    <button
+                                        onClick={() =>
+                                            navigate(`/admin/produtos/editar/${product.id}`)
+                                        }
+                                    >
+                                        Editar
+                                    </button>
+                                    <button onClick={() => toggleActive(product)}>
+                                        {product.is_active !== false
+                                            ? "Desativar"
+                                            : "Ativar"}
+                                    </button>
+                                    <button
+                                        className="danger"
+                                        onClick={() => {
+                                            setSelectedId(Number(product.id));
+                                            setOpenDeleteModal(true);
+                                        }}
+                                    >
+                                        Deletar
+                                    </button>
+                                </div>
                             </div>
-
-                            <div className="meta">
-
-                                {product.brand && (
-                                    <span>
-                                        Marca: {product.brand}
-                                    </span>
-                                )}
-
-                                {product.gender && (
-                                    <span>
-                                        Gênero: {product.gender}
-                                    </span>
-                                )}
-
-                                {product.category_id && (
-                                    <span>
-                                        Categoria: {product.category_id}
-                                    </span>
-                                )}
-
-                            </div>
-
-                            <span
-                                className={
-                                    product.is_active
-                                        ? "active"
-                                        : "inactive"
-                                }
-                            >
-                                {product.is_active
-                                    ? "Ativo"
-                                    : "Inativo"}
-                            </span>
-
-                            {product.created_at && (
-                                <small>
-                                    Criado em:{" "}
-                                    {new Date(
-                                        product.created_at
-                                    ).toLocaleDateString("pt-BR")}
-                                </small>
-                            )}
-
-                            <div className="actions">
-
-                                <button onClick={() => handleEdit(product.id)}>
-                                    Editar
-                                </button>
-
-                                <button
-                                    onClick={() => {
-                                        setSelectedId(Number(product.id));
-                                        setOpenDeleteModal(true);
-                                    }}
-                                >
-                                    Deletar
-                                </button>
-
-                            </div>
-
                         </div>
                     ))}
-
                 </div>
             )}
 
@@ -254,25 +225,19 @@ export default function ListProducts() {
                         className="modal-content delete"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <h3>Tem certeza?</h3>
-
+                        <h3>Excluir produto?</h3>
                         <p>Essa ação não pode ser desfeita.</p>
-
                         <div className="modal-actions">
-
                             <button onClick={() => setOpenDeleteModal(false)}>
                                 Cancelar
                             </button>
-
-                            <button onClick={confirmDelete}>
+                            <button className="danger" onClick={confirmDelete}>
                                 Sim, deletar
                             </button>
-
                         </div>
                     </div>
                 </div>
             )}
-
         </div>
     );
 }

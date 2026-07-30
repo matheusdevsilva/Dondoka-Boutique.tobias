@@ -1,9 +1,14 @@
-import { JwtPayload } from "../../types/JwtPayload"
-
 declare global {
     namespace Express {
         interface Request {
-            user?: JwtPayload
+            user?: {
+                id: string
+                username?: string
+                email?: string
+                role?: string
+            }
         }
     }
 }
+
+export {}

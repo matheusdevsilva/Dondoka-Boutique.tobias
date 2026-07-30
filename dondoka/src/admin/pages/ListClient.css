@@ -1,0 +1,351 @@
+.clients-page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    animation: adminPageIn 0.35s ease both;
+}
+
+@keyframes adminPageIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.client-card {
+    text-align: left;
+    background: #fff;
+    border: 1px solid #efe6ea;
+    padding: 16px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-family: inherit;
+    color: inherit;
+    transition: border-color 0.2s, transform 0.2s;
+}
+
+.client-card:hover,
+.client-card.active {
+    border-color: #eb268f;
+    transform: translateY(-1px);
+}
+
+.client-detail {
+    background: #fff;
+    border: 1px solid #efe6ea;
+    padding: 22px;
+    min-height: 320px;
+    box-shadow: 0 8px 24px rgba(43, 26, 34))), 0.03);
+}
+
+.clients-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.clients-header h1 {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 2.2rem;
+    font-weight: 500;
+    color: #2b1a22;
+}
+
+.clients-header p {
+    color: #8a7380;
+    font-size: 13px;
+    margin-top: 4px;
+}
+
+.clients-header input {
+    min-width: min(320px, 100%);
+    padding: 12px 14px;
+    border: 1px solid #efe6ea;
+    background: #fff;
+    font-family: inherit;
+    outline: none;
+}
+
+.clients-header input:focus {
+    border-color: #eb268f;
+}
+
+.clients-layout {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.9fr) 1.1fr;
+    gap: 18px;
+    align-items: start;
+}
+
+.clients-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 70vh;
+    overflow: auto;
+}
+
+.client-card h3 {
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0 0 4px;
+}
+
+.client-card p {
+    margin: 0;
+    color: #8a7380;
+    font-size: 13px;
+}
+
+.client-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    font-size: 12px;
+    color: #8a7380;
+}
+
+.client-meta strong {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 1.2rem;
+    color: #2b1a22;
+    font-weight: 500;
+}
+
+.client-detail-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+
+.client-detail-head h2 {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 1.8rem;
+    font-weight: 500;
+    margin: 0 0 4px;
+}
+
+.client-detail-head p {
+    margin: 0;
+    color: #8a7380;
+    font-size: 13px;
+}
+
+.client-detail-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.client-detail-actions button,
+.client-edit-form button,
+.modal-actions button {
+    padding: 10px 14px;
+    border: 1px solid #2b1a22;
+    background: #fff;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.client-detail-actions button.danger,
+.modal-actions button.danger {
+    border-color: #c0392b;
+    color: #c0392b;
+}
+
+.client-info {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.client-info p {
+    margin: 0;
+    padding: 12px;
+    background: #fbf8f9;
+    border: 1px solid #efe6ea;
+}
+
+.client-info span {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8a7380;
+    margin-bottom: 6px;
+}
+
+.client-info strong {
+    font-size: 14px;
+    font-weight: 500;
+    color: #2b1a22;
+}
+
+.client-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.client-edit-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8a7380;
+}
+
+.client-edit-form input {
+    padding: 12px 14px;
+    border: 1px solid #efe6ea;
+    font-family: inherit;
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 14px;
+}
+
+.client-edit-form button {
+    align-self: flex-start;
+    background: #eb268f;
+    border-color: #eb268f;
+    color: #fff;
+}
+
+.client-message {
+    color: #eb268f;
+    font-size: 13px;
+    margin: 0 0 12px;
+}
+
+.client-section {
+    margin-top: 8px;
+    padding-top: 18px;
+    border-top: 1px solid #efe6ea;
+}
+
+.client-section h3 {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 1.4rem;
+    font-weight: 500;
+    margin: 0 0 14px;
+}
+
+.client-order {
+    border: 1px solid #efe6ea;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+
+.client-order header,
+.client-order footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.client-order ul {
+    list-style: none;
+    padding: 10px 0;
+    margin: 0;
+    color: #5a4450;
+    font-size: 13px;
+}
+
+.client-order footer {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 1.2rem;
+}
+
+.client-wishlist {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.client-wish-item {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.client-wish-item img {
+    width: 52px;
+    height: 64px;
+    object-fit: cover;
+    background: #fbf8f9;
+}
+
+.client-wish-item strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.client-wish-item span {
+    font-size: 13px;
+    color: #8a7380;
+}
+
+.clients-empty {
+    color: #8a7380;
+    font-size: 14px;
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(43, 26, 34))), 0.45);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+.modal-content {
+    background: #fff;
+    padding: 24px;
+    width: min(400px, 90vw);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    border: 1px solid #efe6ea;
+}
+
+.modal-content h3 {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 1.6rem;
+    font-weight: 500;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+@media (max-width: 900px) {
+    .clients-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .clients-list {
+        max-height: none;
+    }
+
+    .client-info {
+        grid-template-columns: 1fr;
+    }
+}

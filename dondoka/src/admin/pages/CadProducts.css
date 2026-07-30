@@ -1,276 +1,307 @@
-/* =========================
-   LAYOUT GERAL
-========================= */
 .product-layout {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
-    padding: 20px;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: 24px;
+    animation: adminPageIn 0.35s ease both;
 }
 
-/* responsivo */
-@media (max-width: 900px) {
+@keyframes adminPageIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 980px) {
     .product-layout {
         grid-template-columns: 1fr;
     }
 }
 
-/* =========================
-   PREVIEW BOX
-========================= */
-.container-preview {
+.container-preview,
+.container-forms-products {
     background: #fff;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    padding: 22px;
+    border: 1px solid #efe6ea;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.container-preview:hover,
+.container-forms-products:focus-within {
+    border-color: #f7cfe3;
+    box-shadow: 0 8px 24px rgba(43, 26, 34))), 0.03);
+}
+
+.container-preview h3,
+.form-title h2 {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 1.6rem;
+    font-weight: 500;
+    margin-bottom: 6px;
+}
+
+.form-title {
+    margin-bottom: 16px;
+}
+
+.form-title p {
+    color: #8a7380;
+    font-size: 13px;
+}
+
+.form-message {
+    padding: 12px 14px;
+    background: #fff0f7;
+    color: #eb268f;
+    border: 1px solid #f7cfe3;
+    margin-bottom: 14px;
+    font-size: 13px;
 }
 
 .preview-empty {
-    height: 260px;
-    border: 2px dashed #ddd;
-    border-radius: 12px;
+    height: 280px;
+    border: 1px dashed #efe6ea;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #888;
-}
-
-/* =========================
-   CAROUSEL
-========================= */
-.carousel {
-    position: relative;
+    color: #8a7380;
+    background: #fbf8f9;
 }
 
 .carousel img {
     width: 100%;
-    height: 260px;
+    height: 320px;
     object-fit: cover;
-    border-radius: 12px;
+    background: #fbf8f9;
 }
 
-/* botões do carousel */
-.carousel-controls {
+.preview-info {
+    margin-top: 16px;
     display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
+    flex-direction: column;
+    gap: 8px;
 }
 
-.carousel-controls button {
-    background: #eb268f;
-    border: none;
-    color: #fff;
-    padding: 8px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: 0.2s;
+.preview-info h4 {
+    font-size: 1.1rem;
+    font-weight: 500;
 }
 
-.carousel-controls button:hover {
-    opacity: 0.85;
+.preview-info .price {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 1.6rem;
+    color: #eb268f;
 }
 
-/* =========================
-   THUMBNAILS
-========================= */
-.thumbnails {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-    flex-wrap: wrap;
+.preview-info .old {
+    color: #8a7380;
+    text-decoration: line-through;
+    font-size: 13px;
 }
 
-/* thumbnail individual */
-.thumb {
-    position: relative;
-    width: 60px;
-    height: 60px;
-}
-
-/* imagem thumbnail */
-.thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 8px;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: 0.2s;
-}
-
-/* ativa */
-.thumb.active img {
-    border-color: #eb268f;
-    transform: scale(1.05);
-}
-
-/* botão remover */
-.thumb button {
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    border: none;
-    background: #e74c3c;
-    color: white;
-    font-size: 10px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.preview-info > p {
+    color: #5a4450;
+    font-size: 14px;
+    line-height: 1.6;
 }
 
 .preview-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr 1fr;
     gap: 10px;
-    margin-top: 15px;
+    margin-top: 10px;
 }
 
 .preview-item {
     display: flex;
-    align-items: center;
     gap: 10px;
-    background: #f7f7f7;
+    align-items: center;
     padding: 10px;
-    border-radius: 10px;
-    transition: 0.2s;
-}
-
-.preview-item:hover {
-    transform: translateY(-2px);
-    background: #f1f1f1;
-}
-
-.preview-item svg {
-    color: #eb268f;
+    background: #fbf8f9;
+    border: 1px solid #efe6ea;
 }
 
 .preview-item span {
-    font-size: 12px;
-    color: #777;
     display: block;
+    font-size: 11px;
+    color: #8a7380;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
 }
 
 .preview-item strong {
-    font-size: 14px;
-    color: #333;
+    font-size: 13px;
+    font-weight: 500;
 }
 
-/* =========================
-   FORM
-========================= */
 .container-forms-products {
-    background: #fff;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     display: flex;
     flex-direction: column;
-    gap: 15px;
-}
-
-/* inputs */
-.container-input-products {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.container-input-products label,
-.container-grid-products label {
-    font-size: 14px;
-    color: #555;
-}
-
-.container-input-products input,
-.container-input-products select {
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    outline: none;
-    transition: 0.2s;
-}
-
-.container-input-products input:focus,
-.container-grid-products input:focus,
-.container-input-products .input-decription-products:focus {
-    border-color: #eb268f;
+    gap: 14px;
 }
 
 .container-grid-products {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-    width: 100%;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
 }
 
-.input-products {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+.container-input-products {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.container-input-products label {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #8a7380;
+}
+
+.input-products,
+.input-description-products,
+.container-input-products input[type="file"] {
+    padding: 12px 14px;
+    border: 1px solid #efe6ea;
+    background: #fff;
+    font-family: inherit;
+    color: #2b1a22;
     outline: none;
-    transition: 0.2s;
-    background: white;
 }
 
-.input-products:focus {
+.input-products:focus,
+.input-description-products:focus {
     border-color: #eb268f;
 }
 
-/* responsivo */
-@media (max-width: 700px) {
-    .container-grid-products {
-        grid-template-columns: 1fr;
-    }
+.input-description-products {
+    min-height: 110px;
+    resize: vertical;
 }
 
-.container-grid-products input {
+.form-actions {
     display: flex;
     gap: 10px;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    outline: none;
-    transition: 0.2s;
+    justify-content: flex-end;
+    margin-top: 8px;
 }
 
-.input-description-products {
-    min-height: 120px;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    outline: none;
-}
-
-/* =========================
-   BOTÃO
-========================= */
-.bnt-cad-product {
-    background: #eb268f;
-    color: white;
+.bnt-cad-product,
+.bnt-secondary {
+    padding: 14px 20px;
     border: none;
-    padding: 12px;
-    border-radius: 8px;
     cursor: pointer;
-    transition: 0.2s;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
     font-weight: 500;
 }
 
-.bnt-cad-product:hover {
-    background: transparent;
-    transition: 0.4s;
-    color: #eb268f;
-    border: 1px solid #eb268f;
-    transform: translateY(-2px);
+.bnt-cad-product {
+    background: #eb268f;
+    color: #fff;
 }
 
-/* =========================
-   HOVER EFFECTS GERAIS
-========================= */
-button {
-    transition: 0.2s;
+.bnt-cad-product:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.bnt-cad-product:hover:not(:disabled) {
+    background: #2b1a22;
+}
+
+.bnt-secondary {
+    background: #fff;
+    border: 1px solid #2b1a22;
+    color: #2b1a22;
+}
+
+.bnt-secondary:hover {
+    background: #2b1a22;
+    color: #fff;
+}
+
+.field-hint {
+    font-size: 12px;
+    color: #8a7380;
+    margin: 0;
+}
+
+.preview-thumbs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.preview-thumbs button {
+    padding: 0;
+    border: 1px solid #efe6ea;
+    background: transparent;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.preview-thumbs button.active,
+.preview-thumbs button:hover {
+    opacity: 1;
+    border-color: #eb268f;
+}
+
+.preview-thumbs img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+}
+
+.image-manager {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 10px;
+}
+
+.image-chip {
+    position: relative;
+    border: 1px solid #efe6ea;
+    background: #fbf8f9;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.image-chip img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+}
+
+.image-chip span {
+    font-size: 11px;
+    color: #8a7380;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.image-chip button {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: #2b1a22;
+    color: #fff;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+}
+
+@media (max-width: 700px) {
+    .container-grid-products,
+    .preview-grid {
+        grid-template-columns: 1fr;
+    }
 }

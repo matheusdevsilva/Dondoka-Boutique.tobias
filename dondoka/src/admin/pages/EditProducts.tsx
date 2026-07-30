@@ -1,7 +1,7 @@
-export default function EditProducts() {
-    return (
-        <div>
+import { useParams } from "react-router-dom";
+import ProductForm from "../components/ProductForm";
 
-        </div>
-    )
+export default function EditProducts() {
+    const { id } = useParams();
+    return <ProductForm mode="edit" productId={id} />;
 }

@@ -65,36 +65,22 @@ export async function Login(req: Request, res: Response) {
 }
 
 
-
-export async function getAdmins(req: Request, res: Response) {
-    try {
-        const result = await pool.query("")
-    } catch (error) {
-
-    }
-}
-
-export async function getAdminsById(req: Request, res: Response) {
-    try {
-        const id = req.body
-        const result = await pool.query("select * from admins  where = $1", [id])
-
-    } catch (error) {
-
-    }
-}
-
 export async function CreateAdmin(req: Request, res: Response) {
     try {
         const { name, username, email, password } = req.body
 
+        if (!name || !username || !email || !password) {
+            return res.status(400).json({
+                message: "name, username, email e password são obrigatórios",
+            })
+        }
 
         const hashedPassword = await bcrypt.hash(password, 10)
 
         const result = await pool.query(
-            `INSERT INTO admin (name,username  email, password)
-             VALUES ($1, $2, $3,$4)
-             RETURNING id, name, email, role`,
+            `INSERT INTO admin (name, username, email, password)
+             VALUES ($1, $2, $3, $4)
+             RETURNING id, name, username, email, role`,
             [name, username, email, hashedPassword]
         )
 
@@ -136,12 +122,51 @@ export async function DeleteAdmin(req: Request, res: Response) {
 
 export async function EditAdmin(req: Request, res: Response) {
     try {
-        const {id} = req.body 
-        
+        const { id } = req.params
+        const { name, username, email, password } = req.body
 
-        const result = await pool.query("select * from  admin where = $1",[id])
+        if (!id) {
+            return res.status(400).json({ message: "ID é obrigatório" })
+        }
+
+        const existing = await pool.query(
+            "SELECT * FROM admin WHERE id = $1",
+            [id]
+        )
+
+        if (existing.rows.length === 0) {
+            return res.status(404).json({ message: "Admin não encontrado" })
+        }
+
+        const current = existing.rows[0]
+        const hashedPassword = password
+            ? await bcrypt.hash(password, 10)
+            : current.password
+
+        const result = await pool.query(
+            `UPDATE admin SET
+                name = $1,
+                username = $2,
+                email = $3,
+                password = $4
+             WHERE id = $5
+             RETURNING id, name, username, email, role`,
+            [
+                name ?? current.name,
+                username ?? current.username,
+                email ?? current.email,
+                hashedPassword,
+                id,
+            ]
+        )
+
+        return res.status(200).json({
+            success: true,
+            data: result.rows[0],
+        })
 
     } catch (error) {
-        
+        console.error(error)
+        return res.status(500).json({ message: "Erro ao editar admin" })
     }
 }

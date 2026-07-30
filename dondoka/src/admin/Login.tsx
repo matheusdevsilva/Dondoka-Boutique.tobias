@@ -31,9 +31,8 @@ export default function LoginAdmin() {
             navigate("/admin/dashboard")
 
         } catch (error) {
-
             console.error("Erro no login", error)
-
+            alert("Usuário ou senha inválidos")
         }
     }
 
