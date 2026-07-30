@@ -27,9 +27,9 @@ services:
       - key: SHIPPING_FEE
         value: "15"
       - key: CORS_ORIGIN
-        sync: false
+        value: https://dondoka-web.onrender.com
       - key: FRONTEND_URL
-        sync: false
+        value: https://dondoka-web.onrender.com
 
   - type: web
     name: dondoka-web
@@ -44,7 +44,7 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        sync: false
+        value: https://dondoka-api.onrender.com/api
       - key: VITE_WHATSAPP
         value: "5511949316452"
       - key: VITE_INSTAGRAM
