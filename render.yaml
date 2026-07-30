@@ -2,7 +2,7 @@ databases:
   - name: dondoka-db
     databaseName: dondoka
     user: dondoka
-    # Se o free não estiver disponível na sua conta, troque para basic-256mb
+    # Se o free não estiver disponível na sua conta, use basic-256mb
     plan: basic-256mb
 
 services:
@@ -13,8 +13,8 @@ services:
     plan: free
     region: oregon
     buildCommand: npm install && npm run build
-    startCommand: npm start
-    preDeployCommand: npm run postdeploy
+    # free tier não aceita preDeployCommand — setup roda no start
+    startCommand: npm run postdeploy && npm start
     healthCheckPath: /api/
     autoDeploy: true
     envVars:
@@ -38,7 +38,6 @@ services:
     runtime: static
     rootDir: dondoka
     plan: free
-    region: oregon
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     autoDeploy: true

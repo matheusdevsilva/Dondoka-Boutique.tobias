@@ -47,7 +47,7 @@ O arquivo `render.yaml` na raiz do repositório sobe:
    - `FRONTEND_URL` = mesma URL do front
 6. Redeploy do front (para gravar `VITE_*` no build) e da API.
 
-O `preDeployCommand` da API roda `npm run postdeploy` (= `db:setup`) e cria as tabelas.
+O `startCommand` da API roda `postdeploy` (= `db:setup`) e depois sobe o servidor (plano free não aceita `preDeployCommand`).
 
 Opcional após o banco estar ok (Shell do Render na API):
 
