@@ -27,7 +27,7 @@
 .container-preview:hover,
 .container-forms-products:focus-within {
     border-color: #f7cfe3;
-    box-shadow: 0 8px 24px rgba(43, 26, 34))), 0.03);
+    box-shadow: 0 8px 24px rgba(43, 26, 34, 0.03);
 }
 
 .container-preview h3,

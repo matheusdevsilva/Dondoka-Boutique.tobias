@@ -10,7 +10,7 @@ services:
     runtime: node
     rootDir: api
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     # Free não aceita preDeployCommand — setup do banco no start
     startCommand: npm run postdeploy && npm start
     healthCheckPath: /api/
@@ -35,7 +35,7 @@ services:
     name: dondoka-web
     runtime: static
     rootDir: dondoka
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     staticPublishPath: dist
     autoDeploy: true
     routes:

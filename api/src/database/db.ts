@@ -23,7 +23,7 @@ pool.connect()
     console.log("✅ Banco de dados conectado com sucesso!")
     client.release()
   })
-  .catch(err => {
+  .catch((err: unknown) => {
     console.error("❌ Erro ao conectar no banco:", err)
   })
 

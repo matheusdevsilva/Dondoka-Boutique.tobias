@@ -13,7 +13,7 @@
 }
 
 .header:hover {
-    box-shadow: 0 8px 24px rgba(43, 26, 34))), 0.04);
+    box-shadow: 0 8px 24px rgba(43, 26, 34, 0.04);
 }
 
 .container-logo a {
@@ -105,7 +105,8 @@
     z-index: 120;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 12px 30px rgba(43, 26, 34))), 0.08);
+    box-shadow: 0 12px 30px rgba(43, 26, 34, 0.08);
+    animation: searchOpen 0.25s ease;
 }
 
 .search-suggestions button {
@@ -155,9 +156,6 @@
 .cart-size-missing {
     color: #c0392b !important;
 }
-    border: 1px solid var(--line);
-    animation: searchOpen 0.25s ease;
-}
 
 .search-box input {
     border: none;
@@ -204,7 +202,7 @@
 .cart-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(43, 26, 34))), 0.45);
+    background: rgba(43, 26, 34, 0.45);
     backdrop-filter: blur(2px);
     z-index: 998;
 }
@@ -382,7 +380,7 @@
 .checkout-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(43, 26, 34))), 0.5);
+    background: rgba(43, 26, 34, 0.5);
     display: grid;
     place-items: center;
     z-index: 1100;

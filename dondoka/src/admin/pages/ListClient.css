@@ -35,7 +35,7 @@
     border: 1px solid #efe6ea;
     padding: 22px;
     min-height: 320px;
-    box-shadow: 0 8px 24px rgba(43, 26, 34))), 0.03);
+    box-shadow: 0 8px 24px rgba(43, 26, 34, 0.03);
 }
 
 .clients-header {
@@ -307,7 +307,7 @@
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(43, 26, 34))), 0.45);
+    background: rgba(43, 26, 34, 0.45);
     display: flex;
     justify-content: center;
     align-items: center;
