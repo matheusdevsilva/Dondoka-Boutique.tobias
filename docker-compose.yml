@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: dondoka
+      POSTGRES_PASSWORD: dondoka
+      POSTGRES_DB: dondoka
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dondoka -d dondoka"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./api
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: "5000"
+      NODE_ENV: production
+      DATABASE_URL: postgresql://dondoka:dondoka@db:5432/dondoka
+      DATABASE_SSL: "false"
+      JWT_SECRET: troque-esta-chave
+      SHIPPING_FEE: "15"
+      CORS_ORIGIN: http://localhost:5173
+      FRONTEND_URL: http://localhost:5173
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./dondoka
+      args:
+        VITE_API_URL: http://localhost:5000/api
+        VITE_WHATSAPP: "5511949316452"
+        VITE_INSTAGRAM: https://www.instagram.com/dondokaboutique.tobias/
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  uploads:

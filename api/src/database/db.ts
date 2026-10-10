@@ -11,11 +11,22 @@ if (!databaseUrl) {
   );
 }
 
+function shouldUseSsl(url: string): boolean {
+  if (process.env.DATABASE_SSL === "false") return false;
+  if (process.env.DATABASE_SSL === "true") return true;
+
+  try {
+    const host = new URL(url).hostname;
+    const localHosts = new Set(["localhost", "127.0.0.1", "::1", "db", "postgres"]);
+    return !localHosts.has(host);
+  } catch {
+    return !url.includes("localhost");
+  }
+}
+
 const pool = new Pool({
   connectionString: databaseUrl,
-  ssl: databaseUrl.includes("localhost")
-    ? false
-    : { rejectUnauthorized: false },
+  ssl: shouldUseSsl(databaseUrl) ? { rejectUnauthorized: false } : false,
 });
 
 pool.connect()

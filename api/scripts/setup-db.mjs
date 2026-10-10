@@ -5,9 +5,22 @@ import bcrypt from 'bcrypt'
 
 const url = getDatabaseUrl()
 
+function shouldUseSsl(connectionUrl) {
+  if (process.env.DATABASE_SSL === "false") return false
+  if (process.env.DATABASE_SSL === "true") return true
+
+  try {
+    const host = new URL(connectionUrl).hostname
+    const localHosts = new Set(["localhost", "127.0.0.1", "::1", "db", "postgres"])
+    return !localHosts.has(host)
+  } catch {
+    return !connectionUrl.includes("localhost")
+  }
+}
+
 const pool = new pg.Pool({
   connectionString: url,
-  ssl: { rejectUnauthorized: false },
+  ssl: shouldUseSsl(url) ? { rejectUnauthorized: false } : false,
 })
 
 const categories = [
