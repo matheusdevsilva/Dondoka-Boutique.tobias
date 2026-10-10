@@ -1,9 +1,9 @@
 export interface ProductType {
-    id: string;
+    id: string | number;
     name: string;
-    description?: string;
-    price: number;
-    discount_price?: number | null;
+    description?: string | null;
+    price: number | string;
+    discount_price?: number | string | null;
     image_url?: string | null;
     images?: string[] | string | null;
     category_id?: number | string | null;
@@ -23,8 +23,10 @@ export function productImages(
         list = raw.filter(Boolean);
     } else if (typeof raw === "string" && raw.trim()) {
         try {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) list = parsed.filter(Boolean);
+            const parsed: unknown = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+                list = parsed.filter((item): item is string => typeof item === "string" && !!item);
+            }
         } catch {
             /* ignore */
         }
@@ -47,12 +49,23 @@ export function formatBRL(value: number) {
     });
 }
 
+/** Mesma regra da API: o preço promocional só vale quando é menor que o preço cheio. */
+export function hasDiscount(product: Pick<ProductType, "price" | "discount_price">) {
+    const price = Number(product.price);
+    const discount = Number(product.discount_price);
+    return discount > 0 && discount < price;
+}
+
 export function productPrice(product: Pick<ProductType, "price" | "discount_price">) {
-    return Number(product.discount_price || product.price) || 0;
+    return hasDiscount(product) ? Number(product.discount_price) : Number(product.price) || 0;
+}
+
+export function productStock(product: Pick<ProductType, "stock">) {
+    return Math.max(0, Number(product.stock ?? 0));
 }
 
 export function parseSizes(sizes?: string | null): string[] {
-    if (!sizes) return ["P", "M", "G", "GG"];
+    if (!sizes) return [];
     return sizes
         .split(",")
         .map((s) => s.trim())

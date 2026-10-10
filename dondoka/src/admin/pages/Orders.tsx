@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api from "../../services/api";
+import api, { apiErrorMessage, type ApiResponse } from "../../services/api";
 import { formatBRL } from "../../types/product";
 import "./Orders.css";
 
@@ -36,6 +36,12 @@ const STATUS_LABEL: Record<Order["status"], string> = {
     cancelled: "Cancelado",
 };
 
+function csvCell(value: string | number) {
+    let text = String(value);
+    if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+    return `"${text.replace(/"/g, '""')}"`;
+}
+
 function toCsv(orders: Order[]) {
     const header = [
         "id",
@@ -61,7 +67,7 @@ function toCsv(orders: Order[]) {
         return [
             order.id,
             new Date(order.created_at).toLocaleString("pt-BR"),
-            `"${order.customer_name.replace(/"/g, '""')}"`,
+            order.customer_name,
             order.customer_phone,
             order.status,
             order.shipping_method === "delivery" ? "entrega" : "retirada",
@@ -69,8 +75,10 @@ function toCsv(orders: Order[]) {
             Number(order.discount || 0),
             Number(order.shipping_fee || 0),
             Number(order.total),
-            `"${items.replace(/"/g, '""')}"`,
-        ].join(",");
+            items,
+        ]
+            .map(csvCell)
+            .join(",");
     });
 
     return [header.join(","), ...rows].join("\n");
@@ -80,20 +88,30 @@ export default function Orders() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<"all" | Order["status"]>("all");
+    const [feedback, setFeedback] = useState<{ type: "ok" | "error"; text: string } | null>(null);
+    const [updatingId, setUpdatingId] = useState<number | null>(null);
 
-    async function loadOrders() {
-        try {
-            setLoading(true);
-            const response = await api.get("/admin/orders");
-            setOrders(response.data.data || []);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    }
+    useEffect(() => {
+        const controller = new AbortController();
+        api.get<ApiResponse<Order[]>>("/admin/orders", {
+            params: { limit: 200 },
+            signal: controller.signal,
+        })
+            .then((response) => setOrders(response.data.data || []))
+            .catch((error) => {
+                if (!controller.signal.aborted) {
+                    setFeedback({ type: "error", text: apiErrorMessage(error, "Erro ao carregar pedidos.") });
+                }
+            })
+            .finally(() => {
+                if (!controller.signal.aborted) setLoading(false);
+            });
+        return () => controller.abort();
+    }, []);
 
     async function updateStatus(id: number, status: Order["status"]) {
+        setFeedback(null);
+        setUpdatingId(id);
         try {
             await api.put(`/admin/orders/${id}/status`, { status });
             setOrders((prev) =>
@@ -101,9 +119,11 @@ export default function Orders() {
                     order.id === id ? { ...order, status } : order
                 )
             );
+            setFeedback({ type: "ok", text: `Pedido #${id} marcado como ${STATUS_LABEL[status].toLowerCase()}.` });
         } catch (error) {
-            console.error(error);
-            alert("Erro ao atualizar status");
+            setFeedback({ type: "error", text: apiErrorMessage(error, "Erro ao atualizar status.") });
+        } finally {
+            setUpdatingId(null);
         }
     }
 
@@ -113,14 +133,10 @@ export default function Orders() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `pedidos-dondoka-${Date.now()}.csv`;
+        a.download = `pedidos-dondoka-${new Date().toISOString().slice(0, 10)}.csv`;
         a.click();
         URL.revokeObjectURL(url);
     }
-
-    useEffect(() => {
-        loadOrders();
-    }, []);
 
     const filtered =
         filter === "all"
@@ -135,7 +151,11 @@ export default function Orders() {
                     <p>{filtered.length} pedidos</p>
                 </div>
                 <div className="orders-header-actions">
+                    <label htmlFor="orders-filter" className="sr-only">
+                        Filtrar por status
+                    </label>
                     <select
+                        id="orders-filter"
                         value={filter}
                         onChange={(e) =>
                             setFilter(e.target.value as "all" | Order["status"])
@@ -153,7 +173,15 @@ export default function Orders() {
                 </div>
             </div>
 
-            {loading && <p className="orders-empty">Carregando...</p>}
+            <p
+                className={`orders-feedback ${feedback?.type ?? ""}`}
+                role={feedback?.type === "error" ? "alert" : "status"}
+                hidden={!feedback}
+            >
+                {feedback?.text}
+            </p>
+
+            {loading && <p className="orders-empty" role="status">Carregando...</p>}
 
             {!loading && filtered.length === 0 && (
                 <p className="orders-empty">Nenhum pedido encontrado.</p>
@@ -164,7 +192,7 @@ export default function Orders() {
                     <article key={order.id} className="order-card">
                         <div className="order-card-top">
                             <div>
-                                <h3>Pedido #{order.id}</h3>
+                                <h2>Pedido #{order.id}</h2>
                                 <p>
                                     {order.customer_name} • {order.customer_phone}
                                     {order.customer_id
@@ -229,6 +257,8 @@ export default function Orders() {
                                 <strong>{formatBRL(Number(order.total))}</strong>
                             </div>
                             <select
+                                aria-label={`Status do pedido #${order.id}`}
+                                disabled={updatingId === order.id}
                                 value={order.status}
                                 onChange={(e) =>
                                     updateStatus(

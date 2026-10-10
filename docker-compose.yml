@@ -1,51 +1,74 @@
+x-api-env: &api-env
+  NODE_ENV: production
+  DATABASE_URL: postgresql://dondoka:${POSTGRES_PASSWORD}@db:5432/dondoka
+  DATABASE_SSL: "false"
+  JWT_SECRET: ${JWT_SECRET:?Defina JWT_SECRET no .env (openssl rand -hex 32)}
+
 services:
   db:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: dondoka
-      POSTGRES_PASSWORD: dondoka
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env (openssl rand -hex 32)}
       POSTGRES_DB: dondoka
     volumes:
       - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U dondoka -d dondoka"]
       interval: 5s
       timeout: 5s
       retries: 10
 
-  api:
+  migrate:
     build:
       context: ./api
-    ports:
-      - "5000:5000"
+    command: ["node", "scripts/setup-db.mjs"]
     environment:
-      PORT: "5000"
-      NODE_ENV: production
-      DATABASE_URL: postgresql://dondoka:dondoka@db:5432/dondoka
-      DATABASE_SSL: "false"
-      JWT_SECRET: troque-esta-chave
-      SHIPPING_FEE: "15"
-      CORS_ORIGIN: http://localhost:5173
-      FRONTEND_URL: http://localhost:5173
-    volumes:
-      - uploads:/app/uploads
+      <<: *api-env
+      ADMIN_INITIAL_USERNAME: ${ADMIN_INITIAL_USERNAME:-admin}
+      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}
     depends_on:
       db:
         condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: ./api
+    expose:
+      - "5000"
+    environment:
+      <<: *api-env
+      PORT: "5000"
+      SHIPPING_FEE: ${SHIPPING_FEE:-15}
+      CORS_ORIGIN: ${PUBLIC_URL:-http://localhost:5173}
+      COOKIE_SAMESITE: lax
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+    volumes:
+      - uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5000/api/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
 
   web:
     build:
       context: ./dondoka
       args:
-        VITE_API_URL: http://localhost:5000/api
-        VITE_WHATSAPP: "5511949316452"
-        VITE_INSTAGRAM: https://www.instagram.com/dondokaboutique.tobias/
+        VITE_API_URL: /api
+        VITE_WHATSAPP: ${VITE_WHATSAPP:-5511949316452}
+        VITE_INSTAGRAM: ${VITE_INSTAGRAM:-https://www.instagram.com/dondokaboutique.tobias/}
     ports:
       - "5173:80"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   pgdata:

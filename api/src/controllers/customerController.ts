@@ -1,23 +1,29 @@
 import type { Request, Response } from "express"
 import bcrypt from "bcrypt"
-import jwt from "jsonwebtoken"
 import pool from "../database/db.js"
+import { endSession, startSession } from "../utils/auth.js"
+import {
+    BCRYPT_ROUNDS,
+    cleanText,
+    isEmail,
+    MIN_CUSTOMER_PASSWORD,
+    toPositiveInt,
+} from "../utils/validation.js"
+import { groupOrderItems } from "./ordersController.js"
 
-function signCustomerToken(customer: { id: number; email: string }) {
-    return jwt.sign(
-        {
-            id: String(customer.id),
-            email: customer.email,
-            role: "customer",
-        },
-        process.env.JWT_SECRET as string,
-        { expiresIn: "7d" }
-    )
+const DUMMY_HASH = bcrypt.hashSync("dondoka-dummy-password", BCRYPT_ROUNDS)
+
+function openCustomerSession(res: Response, customer: { id: number; email: string }) {
+    startSession(res, {
+        id: String(customer.id),
+        email: customer.email,
+        role: "customer",
+    })
 }
 
 export async function registerCustomer(req: Request, res: Response) {
     try {
-        const { name, email, phone, password } = req.body
+        const { name, email, phone, password } = req.body ?? {}
 
         if (!name || !email || !phone || !password) {
             return res.status(400).json({
@@ -26,47 +32,41 @@ export async function registerCustomer(req: Request, res: Response) {
             })
         }
 
-        if (String(password).length < 6) {
+        if (!isEmail(email)) {
+            return res.status(400).json({ success: false, message: "E-mail inválido" })
+        }
+
+        if (String(password).length < MIN_CUSTOMER_PASSWORD) {
             return res.status(400).json({
                 success: false,
-                message: "Senha deve ter pelo menos 6 caracteres",
+                message: `Senha deve ter pelo menos ${MIN_CUSTOMER_PASSWORD} caracteres`,
             })
         }
 
-        const existing = await pool.query(
-            "SELECT id FROM customers WHERE email = $1",
-            [String(email).toLowerCase().trim()]
-        )
-
-        if (existing.rows.length > 0) {
-            return res.status(409).json({
-                success: false,
-                message: "E-mail já cadastrado",
-            })
-        }
-
-        const hash = await bcrypt.hash(String(password), 10)
+        const hash = await bcrypt.hash(String(password), BCRYPT_ROUNDS)
         const result = await pool.query(
             `INSERT INTO customers (name, email, phone, password)
              VALUES ($1, $2, $3, $4)
              RETURNING id, name, email, phone, created_at`,
             [
-                String(name).trim(),
+                cleanText(name, 160),
                 String(email).toLowerCase().trim(),
-                String(phone).trim(),
+                cleanText(phone, 40),
                 hash,
             ]
         )
 
         const customer = result.rows[0]
-        const token = signCustomerToken(customer)
+        openCustomerSession(res, customer)
 
-        return res.status(201).json({
-            success: true,
-            token,
-            user: customer,
-        })
-    } catch (error) {
+        return res.status(201).json({ success: true, data: customer })
+    } catch (error: unknown) {
+        if ((error as { code?: string }).code === "23505") {
+            return res.status(409).json({
+                success: false,
+                message: "E-mail já cadastrado",
+            })
+        }
         console.error("Erro ao cadastrar cliente:", error)
         return res.status(500).json({
             success: false,
@@ -77,7 +77,7 @@ export async function registerCustomer(req: Request, res: Response) {
 
 export async function loginCustomer(req: Request, res: Response) {
     try {
-        const { email, password } = req.body
+        const { email, password } = req.body ?? {}
 
         if (!email || !password) {
             return res.status(400).json({
@@ -87,33 +87,25 @@ export async function loginCustomer(req: Request, res: Response) {
         }
 
         const result = await pool.query(
-            "SELECT * FROM customers WHERE email = $1",
+            "SELECT id, name, email, phone, password FROM customers WHERE email = $1",
             [String(email).toLowerCase().trim()]
         )
-
-        if (result.rows.length === 0) {
-            return res.status(401).json({
-                success: false,
-                message: "E-mail ou senha inválidos",
-            })
-        }
-
         const customer = result.rows[0]
-        const ok = await bcrypt.compare(String(password), customer.password)
 
-        if (!ok) {
+        const ok = await bcrypt.compare(String(password), customer?.password ?? DUMMY_HASH)
+
+        if (!customer || !ok) {
             return res.status(401).json({
                 success: false,
                 message: "E-mail ou senha inválidos",
             })
         }
 
-        const token = signCustomerToken(customer)
+        openCustomerSession(res, customer)
 
         return res.status(200).json({
             success: true,
-            token,
-            user: {
+            data: {
                 id: customer.id,
                 name: customer.name,
                 email: customer.email,
@@ -129,21 +121,22 @@ export async function loginCustomer(req: Request, res: Response) {
     }
 }
 
+export function logoutCustomer(_req: Request, res: Response) {
+    endSession(res, "customer")
+    return res.status(200).json({ success: true })
+}
+
 export async function getCustomerMe(req: Request, res: Response) {
     try {
-        const id = req.user?.id
-        if (!id) {
-            return res.status(401).json({ message: "Não autenticado" })
-        }
-
         const result = await pool.query(
             `SELECT id, name, email, phone, created_at
              FROM customers WHERE id = $1`,
-            [id]
+            [req.user?.id]
         )
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ message: "Cliente não encontrado" })
+            endSession(res, "customer")
+            return res.status(401).json({ success: false, message: "Sessão inválida" })
         }
 
         return res.status(200).json({
@@ -152,49 +145,26 @@ export async function getCustomerMe(req: Request, res: Response) {
         })
     } catch (error) {
         console.error(error)
-        return res.status(500).json({ message: "Erro interno" })
+        return res.status(500).json({ success: false, message: "Erro interno" })
     }
 }
 
 export async function getMyOrders(req: Request, res: Response) {
     try {
-        const id = req.user?.id
-        if (!id) {
-            return res.status(401).json({ message: "Não autenticado" })
-        }
-
         const orders = await pool.query(
             `SELECT * FROM orders
              WHERE customer_id = $1
              ORDER BY id DESC`,
-            [id]
+            [req.user?.id]
         )
 
-        const items = await pool.query(
-            `SELECT oi.*
-             FROM order_items oi
-             JOIN orders o ON o.id = oi.order_id
-             WHERE o.customer_id = $1
-             ORDER BY oi.id`,
-            [id]
-        )
-
-        const byOrder = new Map<number, typeof items.rows>()
-        for (const item of items.rows) {
-            const list = byOrder.get(item.order_id) || []
-            list.push(item)
-            byOrder.set(item.order_id, list)
-        }
-
-        const data = orders.rows.map((order) => ({
-            ...order,
-            items: byOrder.get(order.id) || [],
-        }))
-
-        return res.status(200).json({ success: true, data })
+        return res.status(200).json({
+            success: true,
+            data: await groupOrderItems(orders.rows),
+        })
     } catch (error) {
         console.error(error)
-        return res.status(500).json({ message: "Erro ao listar pedidos" })
+        return res.status(500).json({ success: false, message: "Erro ao listar pedidos" })
     }
 }
 
@@ -226,10 +196,9 @@ export async function getWishlist(req: Request, res: Response) {
 
 export async function addWishlistItem(req: Request, res: Response) {
     try {
-        const id = req.user?.id
-        const { product_id } = req.body
+        const productId = toPositiveInt(req.body?.product_id)
 
-        if (!id || !product_id) {
+        if (!productId) {
             return res.status(400).json({
                 success: false,
                 message: "product_id é obrigatório",
@@ -238,15 +207,15 @@ export async function addWishlistItem(req: Request, res: Response) {
 
         await pool.query(
             `INSERT INTO wishlist_items (customer_id, product_id)
-             VALUES ($1, $2)
+             SELECT $1, id FROM products WHERE id = $2
              ON CONFLICT (customer_id, product_id) DO NOTHING`,
-            [id, product_id]
+            [req.user?.id, productId]
         )
 
         return res.status(201).json({ success: true })
     } catch (error) {
         console.error(error)
-        return res.status(500).json({ message: "Erro ao favoritar" })
+        return res.status(500).json({ success: false, message: "Erro ao favoritar" })
     }
 }
 
@@ -275,29 +244,28 @@ export async function removeWishlistItem(req: Request, res: Response) {
 export async function syncWishlist(req: Request, res: Response) {
     try {
         const id = req.user?.id
-        const { product_ids } = req.body
+        const { product_ids } = req.body ?? {}
 
-        if (!id || !Array.isArray(product_ids)) {
-            return res.status(400).json({ message: "product_ids inválido" })
+        if (!Array.isArray(product_ids)) {
+            return res.status(400).json({ success: false, message: "product_ids inválido" })
         }
 
-        const client = await pool.connect()
-        try {
-            await client.query("BEGIN")
-            for (const productId of product_ids) {
-                await client.query(
-                    `INSERT INTO wishlist_items (customer_id, product_id)
-                     VALUES ($1, $2)
-                     ON CONFLICT (customer_id, product_id) DO NOTHING`,
-                    [id, productId]
-                )
-            }
-            await client.query("COMMIT")
-        } catch (error) {
-            await client.query("ROLLBACK")
-            throw error
-        } finally {
-            client.release()
+        const ids = [
+            ...new Set(
+                product_ids
+                    .slice(0, 500)
+                    .map(toPositiveInt)
+                    .filter((value): value is number => value !== null)
+            ),
+        ]
+
+        if (ids.length > 0) {
+            await pool.query(
+                `INSERT INTO wishlist_items (customer_id, product_id)
+                 SELECT $1, p.id FROM products p WHERE p.id = ANY($2::int[])
+                 ON CONFLICT (customer_id, product_id) DO NOTHING`,
+                [id, ids]
+            )
         }
 
         const result = await pool.query(
@@ -311,7 +279,7 @@ export async function syncWishlist(req: Request, res: Response) {
         })
     } catch (error) {
         console.error(error)
-        return res.status(500).json({ message: "Erro ao sincronizar favoritos" })
+        return res.status(500).json({ success: false, message: "Erro ao sincronizar favoritos" })
     }
 }
 
@@ -325,13 +293,18 @@ export async function adminGetCustomers(_req: Request, res: Response) {
                 c.email,
                 c.phone,
                 c.created_at,
-                COUNT(DISTINCT o.id)::int AS orders_count,
-                COALESCE(SUM(o.total), 0)::numeric AS orders_total,
-                COUNT(DISTINCT w.id)::int AS wishlist_count
+                COALESCE(o.orders_count, 0)::int AS orders_count,
+                COALESCE(o.orders_total, 0)::numeric AS orders_total,
+                COALESCE(w.wishlist_count, 0)::int AS wishlist_count
              FROM customers c
-             LEFT JOIN orders o ON o.customer_id = c.id
-             LEFT JOIN wishlist_items w ON w.customer_id = c.id
-             GROUP BY c.id
+             LEFT JOIN (
+                SELECT customer_id, COUNT(*) AS orders_count, SUM(total) AS orders_total
+                FROM orders GROUP BY customer_id
+             ) o ON o.customer_id = c.id
+             LEFT JOIN (
+                SELECT customer_id, COUNT(*) AS wishlist_count
+                FROM wishlist_items GROUP BY customer_id
+             ) w ON w.customer_id = c.id
              ORDER BY c.id DESC`
         )
 
@@ -369,22 +342,6 @@ export async function adminGetCustomerById(req: Request, res: Response) {
             [id]
         )
 
-        const items = await pool.query(
-            `SELECT oi.*
-             FROM order_items oi
-             JOIN orders o ON o.id = oi.order_id
-             WHERE o.customer_id = $1
-             ORDER BY oi.id`,
-            [id]
-        )
-
-        const byOrder = new Map<number, typeof items.rows>()
-        for (const item of items.rows) {
-            const list = byOrder.get(item.order_id) || []
-            list.push(item)
-            byOrder.set(item.order_id, list)
-        }
-
         const wishlist = await pool.query(
             `SELECT p.id, p.name, p.price, p.discount_price, p.image_url
              FROM wishlist_items w
@@ -398,10 +355,7 @@ export async function adminGetCustomerById(req: Request, res: Response) {
             success: true,
             data: {
                 ...customer.rows[0],
-                orders: orders.rows.map((order) => ({
-                    ...order,
-                    items: byOrder.get(order.id) || [],
-                })),
+                orders: await groupOrderItems(orders.rows),
                 wishlist: wishlist.rows,
             },
         })

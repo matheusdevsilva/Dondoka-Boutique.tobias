@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom"
-import { FaInstagram, FaWhatsapp } from "react-icons/fa"
+import { InstagramIcon, WhatsAppIcon } from "./BrandIcons"
 import logo from "../assets/logo_sem_fundo.png"
 import { INSTAGRAM_HANDLE, INSTAGRAM_URL } from "../utils/social"
 import { isWhatsAppConfigured, whatsappLink } from "../utils/whatsapp"
@@ -19,10 +19,10 @@ export default function Footer() {
                         <a
                             href={INSTAGRAM_URL}
                             target="_blank"
-                            rel="noreferrer"
+                            rel="noopener noreferrer"
                             className="footer-social-link"
                         >
-                            <FaInstagram size={18} aria-hidden />
+                            <InstagramIcon size={18} />
                             <span>Instagram {INSTAGRAM_HANDLE}</span>
                         </a>
                         {isWhatsAppConfigured() && (
@@ -32,7 +32,7 @@ export default function Footer() {
                                 rel="noreferrer"
                                 className="footer-social-link"
                             >
-                                <FaWhatsapp size={18} aria-hidden />
+                                <WhatsAppIcon size={18} />
                                 <span>WhatsApp (11) 94931-6452</span>
                             </a>
                         )}
@@ -40,7 +40,7 @@ export default function Footer() {
                 </div>
 
                 <div className="footer-column">
-                    <h4>Loja</h4>
+                    <h2>Loja</h2>
                     <ul>
                         <li><Link to="/colecao">Coleção</Link></li>
                         <li><Link to="/novidades">Novidades</Link></li>
@@ -50,7 +50,7 @@ export default function Footer() {
                 </div>
 
                 <div className="footer-column">
-                    <h4>Institucional</h4>
+                    <h2>Institucional</h2>
                     <ul>
                         <li><Link to="/sobre">Sobre</Link></li>
                         <li><Link to="/contato">Contato</Link></li>
@@ -60,16 +60,16 @@ export default function Footer() {
                 </div>
 
                 <div className="footer-news">
-                    <h4>Fale conosco</h4>
+                    <h2>Fale conosco</h2>
                     <p>Siga no Instagram e chame no WhatsApp</p>
                     <div className="footer-social footer-social-stack">
                         <a
                             href={INSTAGRAM_URL}
                             target="_blank"
-                            rel="noreferrer"
+                            rel="noopener noreferrer"
                             className="footer-cta"
                         >
-                            <FaInstagram size={16} aria-hidden />
+                            <InstagramIcon size={16} />
                             Seguir no Instagram
                         </a>
                         {isWhatsAppConfigured() && (
@@ -79,7 +79,7 @@ export default function Footer() {
                                 rel="noreferrer"
                                 className="footer-cta footer-cta-ghost"
                             >
-                                <FaWhatsapp size={16} aria-hidden />
+                                <WhatsAppIcon size={16} />
                                 Chamar no WhatsApp
                             </a>
                         )}
@@ -88,7 +88,7 @@ export default function Footer() {
             </div>
 
             <div className="footer-bottom">
-                <p>© 2026 Dondoka Boutique — Todos os direitos reservados</p>
+                <p>© {new Date().getFullYear()} Dondoka Boutique — Todos os direitos reservados</p>
             </div>
         </footer>
     )

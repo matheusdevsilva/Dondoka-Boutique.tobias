@@ -54,35 +54,50 @@
     gap: 12px;
 }
 
-.order-confirmed-card p {
+.order-confirmed-card > div {
     display: flex;
     justify-content: space-between;
     gap: 12px;
-    margin: 0;
     font-size: 14px;
 }
 
-.order-confirmed-card span {
+.order-confirmed-card dt {
     color: var(--brown-muted);
+}
+
+.order-confirmed-card dd {
+    margin: 0;
+    font-weight: 600;
+    text-align: right;
+}
+
+.order-confirmed-card > .order-confirmed-items {
+    flex-direction: column;
+    padding: 12px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+}
+
+.order-confirmed-items dd {
+    font-weight: 400;
+    text-align: left;
 }
 
 .order-confirmed-card ul {
     list-style: none;
-    padding: 12px 0;
+    padding: 0;
     margin: 0;
-    border-top: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
     color: var(--brown-soft);
-    font-size: 14px;
 }
 
 .order-confirmed-card li + li {
     margin-top: 6px;
 }
 
-.order-confirmed-total strong {
+.order-confirmed-total dd {
     font-family: var(--font-serif);
     font-size: 1.4rem;
+    font-weight: 500;
 }
 
 .order-confirmed-warn {

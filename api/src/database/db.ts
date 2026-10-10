@@ -1,4 +1,4 @@
-import { Pool } from 'pg';
+import { Pool, type PoolConfig } from 'pg';
 
 const databaseUrl =
   process.env.DATABASE_URL ||
@@ -24,18 +24,33 @@ function shouldUseSsl(url: string): boolean {
   }
 }
 
+function sslConfig(url: string): PoolConfig["ssl"] {
+  if (!shouldUseSsl(url)) return false;
+  return {
+    rejectUnauthorized: process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== "false",
+    ca: process.env.DATABASE_SSL_CA?.replace(/\\n/g, "\n") || undefined,
+  };
+}
+
 const pool = new Pool({
   connectionString: databaseUrl,
-  ssl: shouldUseSsl(databaseUrl) ? { rejectUnauthorized: false } : false,
+  ssl: sslConfig(databaseUrl),
+  max: Number(process.env.DATABASE_POOL_MAX) || 10,
+  idleTimeoutMillis: 30_000,
+  connectionTimeoutMillis: 10_000,
 });
 
-pool.connect()
-  .then(client => {
-    console.log("✅ Banco de dados conectado com sucesso!")
-    client.release()
-  })
-  .catch((err: unknown) => {
-    console.error("❌ Erro ao conectar no banco:", err)
-  })
+pool.on("error", (err) => {
+  console.error("Erro inesperado no pool do banco:", err);
+});
+
+export async function checkDatabase(): Promise<boolean> {
+  try {
+    await pool.query("SELECT 1");
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export default pool

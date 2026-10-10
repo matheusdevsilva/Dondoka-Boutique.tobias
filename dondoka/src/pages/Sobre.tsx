@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
 import logo from "../assets/logo_sem_fundo.png";
+import Seo from "../components/Seo";
 import "../styles/InfoPages.css";
 
 const FAQ = [
@@ -26,9 +25,11 @@ const FAQ = [
 export default function Sobre() {
     return (
         <>
-            <Header />
-
-            <main className="info-page">
+            <Seo
+                title="Sobre"
+                description="Conheça a Dondoka Boutique: moda feminina elegante em Franco da Rocha - SP. Trocas, tamanhos, pedidos e entrega."
+            />
+            <div className="info-page">
                 <section className="info-hero">
                     <span>A marca</span>
                     <h1>Sobre a Dondoka</h1>
@@ -92,9 +93,7 @@ export default function Sobre() {
                         </Link>
                     </div>
                 </section>
-            </main>
-
-            <Footer />
+            </div>
         </>
     );
 }

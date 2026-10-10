@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-import api, { resolveImageUrl } from "../services/api";
+import api, { resolveImageUrl, type ApiResponse } from "../services/api";
+import Seo from "../components/Seo";
 import logo from "../assets/logo_sem_fundo.png";
-import { formatBRL, productCover, productPrice, type ProductType } from "../types/product";
+import { formatBRL, hasDiscount, productCover, productPrice, type ProductType } from "../types/product";
 import "../styles/Home.css";
 
 interface Category {
@@ -18,34 +17,39 @@ export default function HomePage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        async function load() {
-            try {
-                const [productsRes, categoriesRes] = await Promise.all([
-                    api.get("/products", { params: { page: 1, limit: 8 } }),
-                    api.get("/categories"),
-                ]);
+        const controller = new AbortController();
+        Promise.all([
+            api.get<ApiResponse<ProductType[]>>("/products", {
+                params: { page: 1, limit: 8 },
+                signal: controller.signal,
+            }),
+            api.get<ApiResponse<Category[]>>("/categories", { signal: controller.signal }),
+        ])
+            .then(([productsRes, categoriesRes]) => {
                 setProducts(productsRes.data.data || []);
                 setCategories(categoriesRes.data.data || []);
-            } catch (error) {
-                console.error("Erro ao carregar home:", error);
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        load();
+            })
+            .catch((error) => {
+                if (!controller.signal.aborted) console.error("Erro ao carregar home:", error);
+            })
+            .finally(() => {
+                if (!controller.signal.aborted) setLoading(false);
+            });
+        return () => controller.abort();
     }, []);
 
     return (
         <div className="home">
-            <Header />
-
+            <Seo description="Dondoka Boutique — moda feminina com leveza, presença e personalidade." />
             <section className="home-hero">
                 <div className="home-hero-content">
                     <img
                         src={logo}
-                        alt="Dondoka Boutique"
+                        alt=""
+                        width={499}
+                        height={500}
                         className="home-hero-logo"
+                        fetchPriority="high"
                     />
                     <span className="home-hero-mark">boutique</span>
                     <h1>Dondoka</h1>
@@ -59,7 +63,7 @@ export default function HomePage() {
                         </Link>
                     </div>
                 </div>
-                <span className="home-hero-scroll">scroll</span>
+                <span className="home-hero-scroll" aria-hidden="true">scroll</span>
             </section>
 
             <section className="home-departments">
@@ -120,7 +124,7 @@ export default function HomePage() {
                 </div>
 
                 {loading && (
-                    <div className="home-products-grid">
+                    <div className="home-products-grid" aria-busy="true" aria-label="Carregando produtos">
                         {Array.from({ length: 4 }).map((_, i) => (
                             <div key={`home-sk-${i}`} className="home-skeleton-card">
                                 <div className="home-skeleton-media" />
@@ -146,17 +150,23 @@ export default function HomePage() {
                                 <div className="media">
                                     <img
                                         src={resolveImageUrl(productCover(product))}
-                                        alt={product.name}
+                                        alt=""
+                                        loading="lazy"
+                                        decoding="async"
                                     />
                                 </div>
                                 <h3>{product.name}</h3>
                                 <div className="price-row">
-                                    {product.discount_price ? (
+                                    {hasDiscount(product) && (
                                         <span className="old-price">
+                                            <span className="sr-only">De </span>
                                             {formatBRL(Number(product.price))}
                                         </span>
-                                    ) : null}
-                                    <strong>{formatBRL(productPrice(product))}</strong>
+                                    )}
+                                    <strong>
+                                        {hasDiscount(product) && <span className="sr-only">por </span>}
+                                        {formatBRL(productPrice(product))}
+                                    </strong>
                                 </div>
                             </Link>
                         ))}
@@ -176,8 +186,6 @@ export default function HomePage() {
                     </Link>
                 </div>
             </section>
-
-            <Footer />
         </div>
     );
 }

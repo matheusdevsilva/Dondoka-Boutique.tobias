@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
-import api from "../../services/api";
+import api, { apiErrorMessage, type ApiResponse } from "../../services/api";
+import Modal from "../../components/Modal";
 import { formatBRL } from "../../types/product";
 import "./Coupons.css";
 
@@ -26,22 +27,31 @@ export default function Coupons() {
     const [maxUses, setMaxUses] = useState("");
     const [expiresAt, setExpiresAt] = useState("");
     const [message, setMessage] = useState("");
+    const [listError, setListError] = useState("");
+    const [deleteId, setDeleteId] = useState<number | null>(null);
 
-    async function load() {
-        try {
-            setLoading(true);
-            const res = await api.get("/admin/coupons");
-            setCoupons(res.data.data || []);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    }
+    const [version, setVersion] = useState(0);
+    const load = () => setVersion((v) => v + 1);
 
     useEffect(() => {
-        load();
-    }, []);
+        const controller = new AbortController();
+        api.get<ApiResponse<Coupon[]>>("/admin/coupons", { signal: controller.signal })
+            .then((res) => setCoupons(res.data.data || []))
+            .catch((error) => {
+                if (!controller.signal.aborted) {
+                    setListError(apiErrorMessage(error, "Erro ao carregar cupons."));
+                }
+            })
+            .finally(() => {
+                if (!controller.signal.aborted) setLoading(false);
+            });
+        return () => controller.abort();
+    }, [version]);
+
+    function closeForm() {
+        setOpen(false);
+        setMessage("");
+    }
 
     async function createCoupon(e: FormEvent) {
         e.preventDefault();
@@ -63,9 +73,8 @@ export default function Coupons() {
             setMaxUses("");
             setExpiresAt("");
             load();
-        } catch (error: unknown) {
-            const err = error as { response?: { data?: { message?: string } } };
-            setMessage(err.response?.data?.message || "Erro ao criar cupom");
+        } catch (error) {
+            setMessage(apiErrorMessage(error, "Erro ao criar cupom"));
         }
     }
 
@@ -82,17 +91,19 @@ export default function Coupons() {
                 )
             );
         } catch (error) {
-            console.error(error);
+            setListError(apiErrorMessage(error, "Erro ao atualizar cupom."));
         }
     }
 
-    async function removeCoupon(id: number) {
-        if (!confirm("Remover este cupom?")) return;
+    async function confirmRemove() {
+        if (deleteId == null) return;
         try {
-            await api.delete(`/admin/coupons/${id}`);
-            setCoupons((prev) => prev.filter((c) => c.id !== id));
+            await api.delete(`/admin/coupons/${deleteId}`);
+            setCoupons((prev) => prev.filter((c) => c.id !== deleteId));
         } catch (error) {
-            console.error(error);
+            setListError(apiErrorMessage(error, "Erro ao remover cupom."));
+        } finally {
+            setDeleteId(null);
         }
     }
 
@@ -108,7 +119,13 @@ export default function Coupons() {
                 </button>
             </div>
 
-            {loading && <p className="coupons-empty">Carregando...</p>}
+            {listError && (
+                <p className="coupons-error" role="alert">
+                    {listError}
+                </p>
+            )}
+
+            {loading && <p className="coupons-empty" role="status">Carregando...</p>}
 
             {!loading && coupons.length === 0 && (
                 <p className="coupons-empty">Nenhum cupom ainda.</p>
@@ -118,7 +135,7 @@ export default function Coupons() {
                 {coupons.map((coupon) => (
                     <article key={coupon.id} className="coupon-card">
                         <div>
-                            <h3>{coupon.code}</h3>
+                            <h2>{coupon.code}</h2>
                             <p>
                                 {coupon.type === "percent"
                                     ? `${Number(coupon.value)}% off`
@@ -150,13 +167,15 @@ export default function Coupons() {
                             <button
                                 type="button"
                                 onClick={() => toggleActive(coupon)}
+                                aria-label={`${coupon.is_active ? "Desativar" : "Ativar"} cupom ${coupon.code}`}
                             >
                                 {coupon.is_active ? "Desativar" : "Ativar"}
                             </button>
                             <button
                                 type="button"
                                 className="danger"
-                                onClick={() => removeCoupon(coupon.id)}
+                                onClick={() => setDeleteId(coupon.id)}
+                                aria-label={`Remover cupom ${coupon.code}`}
                             >
                                 Remover
                             </button>
@@ -165,14 +184,15 @@ export default function Coupons() {
                 ))}
             </div>
 
-            {open && (
-                <div className="modal-overlay" onClick={() => setOpen(false)}>
-                    <form
-                        className="modal-content"
-                        onClick={(e) => e.stopPropagation()}
-                        onSubmit={createCoupon}
-                    >
-                        <h3>Novo cupom</h3>
+            <Modal
+                open={open}
+                onClose={closeForm}
+                title="Novo cupom"
+                overlayClassName="modal-overlay"
+                panelClassName="modal-content"
+                headClassName="modal-head"
+            >
+                    <form onSubmit={createCoupon}>
                         <label>
                             Código
                             <input
@@ -180,6 +200,7 @@ export default function Coupons() {
                                 onChange={(e) =>
                                     setCode(e.target.value.toUpperCase())
                                 }
+                                maxLength={40}
                                 required
                             />
                         </label>
@@ -201,7 +222,8 @@ export default function Coupons() {
                             Valor
                             <input
                                 type="number"
-                                min={0}
+                                min={0.01}
+                                max={type === "percent" ? 100 : undefined}
                                 step="0.01"
                                 value={value}
                                 onChange={(e) => setValue(e.target.value)}
@@ -235,16 +257,38 @@ export default function Coupons() {
                                 onChange={(e) => setExpiresAt(e.target.value)}
                             />
                         </label>
-                        {message && <p className="coupons-error">{message}</p>}
+                        {message && (
+                            <p className="coupons-error" role="alert">
+                                {message}
+                            </p>
+                        )}
                         <div className="modal-actions">
-                            <button type="button" onClick={() => setOpen(false)}>
+                            <button type="button" onClick={closeForm}>
                                 Cancelar
                             </button>
                             <button type="submit">Salvar</button>
                         </div>
                     </form>
+            </Modal>
+
+            <Modal
+                open={deleteId != null}
+                onClose={() => setDeleteId(null)}
+                title="Remover este cupom?"
+                overlayClassName="modal-overlay"
+                panelClassName="modal-content"
+                headClassName="modal-head"
+            >
+                <p>Essa ação não pode ser desfeita.</p>
+                <div className="modal-actions">
+                    <button type="button" onClick={() => setDeleteId(null)}>
+                        Cancelar
+                    </button>
+                    <button type="button" className="danger" onClick={confirmRemove}>
+                        Remover
+                    </button>
                 </div>
-            )}
+            </Modal>
         </div>
     );
 }

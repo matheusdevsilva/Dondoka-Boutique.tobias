@@ -1,4 +1,4 @@
-FROM node:20-bookworm-slim AS build
+FROM node:22-bookworm-slim AS build
 
 WORKDIR /app
 
@@ -7,7 +7,7 @@ RUN npm ci
 
 COPY . .
 
-ARG VITE_API_URL=http://localhost:5000/api
+ARG VITE_API_URL=/api
 ARG VITE_WHATSAPP=5511949316452
 ARG VITE_INSTAGRAM=https://www.instagram.com/dondokaboutique.tobias/
 
@@ -17,7 +17,7 @@ ENV VITE_INSTAGRAM=$VITE_INSTAGRAM
 
 RUN npm run build
 
-FROM nginx:1.27-alpine
+FROM nginx:1.29-alpine
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html

@@ -53,7 +53,6 @@
     padding: 12px 14px;
     border: 1px solid #efe6ea;
     background: #fff;
-    outline: none;
     font-family: inherit;
 }
 
@@ -142,7 +141,7 @@
     border: 1px solid #efe6ea;
 }
 
-.modal-content h3 {
+.modal-content h2 {
     font-family: "Cormorant Garamond", Georgia, serif;
     font-size: 1.6rem;
     font-weight: 500;
@@ -151,7 +150,6 @@
 .modal-content input {
     padding: 12px 14px;
     border: 1px solid #efe6ea;
-    outline: none;
     font-family: inherit;
 }
 
@@ -180,4 +178,15 @@
     background: #eb268f;
     border-color: #eb268f;
     color: white;
+}
+
+.categories-list {
+    list-style: none;
+    padding: 0;
+}
+
+.categories-error {
+    color: #9b1236;
+    font-size: 14px;
+    margin: 0 0 12px;
 }

@@ -126,7 +126,7 @@
     border-bottom: 1px solid #efe6ea;
 }
 
-.table-card-head h4 {
+.table-card-head h2 {
     font-family: var(--font-serif, "Cormorant Garamond", Georgia, serif);
     font-size: 1.4rem;
     font-weight: 500;

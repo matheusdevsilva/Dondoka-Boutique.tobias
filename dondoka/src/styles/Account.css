@@ -126,9 +126,16 @@
     cursor: pointer;
 }
 
-.account-error {
-    color: #c0392b;
+.account-error,
+.account-auth .field-error {
+    color: #b3123f;
     font-size: 13px;
+    margin: -6px 0 0;
+}
+
+.account-order h4 {
+    margin: 0;
+    font-size: inherit;
 }
 
 .account-profile {

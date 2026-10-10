@@ -1,5 +1,6 @@
 import type { Request, Response } from "express"
 import pool from "../database/db.js"
+import { cleanText, toPositiveInt } from "../utils/validation.js"
 
 function parseImages(value: unknown): string[] {
     if (!value) return []
@@ -38,31 +39,91 @@ function uploadedUrls(files?: Express.Multer.File[]): string[] {
 }
 
 
+function isAdminRequest(req: Request) {
+    return req.user?.role === "admin"
+}
+
+const SORTS: Record<string, string> = {
+    new: "p.id DESC",
+    asc: "COALESCE(NULLIF(p.discount_price, 0), p.price) ASC, p.id DESC",
+    desc: "COALESCE(NULLIF(p.discount_price, 0), p.price) DESC, p.id DESC",
+}
+
 export async function getProducts(req: Request, res: Response) {
     try {
-        const hasPagination = req.query.page != null || req.query.limit != null
-
-        if (hasPagination) {
-            const page = Math.max(1, Number(req.query.page) || 1)
-            const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 12))
-            const offset = (page - 1) * limit
-
-            const result = await pool.query(
-                "SELECT * FROM products ORDER BY id DESC LIMIT $1 OFFSET $2",
-                [limit, offset]
-            )
-
-            return res.status(200).json({
-                success: true,
-                data: result.rows
-            })
+        const conditions: string[] = []
+        const params: unknown[] = []
+        const add = (sql: string, value: unknown) => {
+            params.push(value)
+            conditions.push(sql.replace("?", `$${params.length}`))
         }
 
-        const result = await pool.query("SELECT * FROM products ORDER BY id DESC")
+        if (!isAdminRequest(req)) conditions.push("p.is_active = TRUE")
+
+        const q = cleanText(req.query.q, 100)
+        if (q) add("p.name ILIKE ?", `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`)
+
+        const category = toPositiveInt(req.query.category)
+        if (category) add("p.category_id = ?", category)
+
+        const exclude = toPositiveInt(req.query.exclude)
+        if (exclude) add("p.id <> ?", exclude)
+
+        if (req.query.promo === "true") {
+            conditions.push("p.discount_price > 0 AND p.discount_price < p.price")
+        }
+
+        const size = cleanText(req.query.size, 20)
+        if (size) add("? = ANY(string_to_array(REPLACE(COALESCE(p.sizes, ''), ' ', ''), ','))", size)
+
+        const minPrice = Number(req.query.min_price)
+        if (req.query.min_price && Number.isFinite(minPrice)) {
+            add("COALESCE(NULLIF(p.discount_price, 0), p.price) >= ?", minPrice)
+        }
+        const maxPrice = Number(req.query.max_price)
+        if (req.query.max_price && Number.isFinite(maxPrice)) {
+            add("COALESCE(NULLIF(p.discount_price, 0), p.price) <= ?", maxPrice)
+        }
+
+        if (typeof req.query.ids === "string") {
+            const ids = req.query.ids
+                .split(",")
+                .map(toPositiveInt)
+                .filter((id): id is number => id !== null)
+                .slice(0, 200)
+            add("p.id = ANY(?::int[])", ids)
+        }
+
+        const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : ""
+        const orderBy = SORTS[String(req.query.sort)] || SORTS.new
+        const hasPagination = req.query.page != null || req.query.limit != null
+        const page = Math.max(1, Number(req.query.page) || 1)
+        const limit = hasPagination
+            ? Math.min(50, Math.max(1, Number(req.query.limit) || 12))
+            : null
+
+        const listParams = [...params]
+        let pagination = ""
+        if (limit) {
+            listParams.push(limit, (page - 1) * limit)
+            pagination = `LIMIT $${listParams.length - 1} OFFSET $${listParams.length}`
+        }
+
+        const [result, count] = await Promise.all([
+            pool.query(`SELECT p.* FROM products p ${where} ORDER BY ${orderBy} ${pagination}`, listParams),
+            limit
+                ? pool.query(`SELECT COUNT(*)::int AS total FROM products p ${where}`, params)
+                : null,
+        ])
 
         return res.status(200).json({
             success: true,
-            data: result.rows
+            data: result.rows,
+            meta: {
+                total: count ? count.rows[0].total : result.rows.length,
+                page,
+                limit: limit ?? result.rows.length,
+            },
         })
     } catch (error) {
         console.error("Erro ao buscar produtos:", error)
@@ -77,25 +138,47 @@ export async function getProducts(req: Request, res: Response) {
 
 export async function getProductsById(req: Request, res: Response) {
     try {
-        const { id } = req.params
+        const id = toPositiveInt(req.params.id)
 
-        const result = await pool.query(
-            "SELECT * FROM products WHERE id = $1",
-            [id]
-        )
+        const result = id
+            ? await pool.query(
+                  `SELECT * FROM products WHERE id = $1 ${isAdminRequest(req) ? "" : "AND is_active = TRUE"}`,
+                  [id]
+              )
+            : { rows: [] }
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ message: "Produto não encontrado" })
+            return res.status(404).json({ success: false, message: "Produto não encontrado" })
         }
 
-        return res.status(200).json(result.rows[0])
+        return res.status(200).json({ success: true, data: result.rows[0] })
 
     } catch (error) {
         console.error(error)
-        return res.status(500).json({ message: "Erro ao buscar produto" })
+        return res.status(500).json({ success: false, message: "Erro ao buscar produto" })
     }
 }
 
+/** Valida campos numéricos do formulário admin; retorna mensagem de erro ou null. */
+function invalidProductNumbers(body: Record<string, unknown>): string | null {
+    const price = body.price
+    if (price !== undefined && price !== "" && !(Number(price) > 0)) {
+        return "Preço inválido"
+    }
+    const discount = body.discount_price
+    if (discount !== undefined && discount !== "" && discount !== null) {
+        const d = Number(discount)
+        if (!(d >= 0)) return "Preço promocional inválido"
+        if (price !== undefined && price !== "" && d >= Number(price)) {
+            return "Preço promocional deve ser menor que o preço"
+        }
+    }
+    const stock = body.stock
+    if (stock !== undefined && stock !== "" && !(Number.isInteger(Number(stock)) && Number(stock) >= 0)) {
+        return "Estoque inválido"
+    }
+    return null
+}
 
 
 export async function createNewProducts(req: Request, res: Response) {
@@ -119,6 +202,11 @@ export async function createNewProducts(req: Request, res: Response) {
                 success: false,
                 message: "Nome e preço são obrigatórios"
             })
+        }
+
+        const invalid = invalidProductNumbers(req.body)
+        if (invalid) {
+            return res.status(400).json({ success: false, message: invalid })
         }
 
         const resolvedCategoryId = category_id || categories || null
@@ -216,7 +304,24 @@ export async function EditProducts(req: Request, res: Response) {
             })
         }
 
+        const invalid = invalidProductNumbers(req.body)
+        if (invalid) {
+            return res.status(400).json({ success: false, message: invalid })
+        }
+
         const current = existing.rows[0]
+        const effectivePrice = req.body.price ? Number(req.body.price) : Number(current.price)
+        const effectiveDiscount =
+            req.body.discount_price === undefined
+                ? current.discount_price
+                : req.body.discount_price || null
+        if (effectiveDiscount != null && Number(effectiveDiscount) >= effectivePrice) {
+            return res.status(400).json({
+                success: false,
+                message: "Preço promocional deve ser menor que o preço"
+            })
+        }
+
         const {
             name,
             description,
@@ -315,7 +420,7 @@ export async function getProductsByCategory(req: Request, res: Response) {
             `SELECT p.*, c.name AS category
              FROM products p
              JOIN categories c ON p.category_id = c.id
-             WHERE c.name = $1`,
+             WHERE c.name = $1 AND p.is_active = TRUE`,
             [category]
         )
 
@@ -392,11 +497,25 @@ export async function deleteCategoriaById(req: Request, res: Response) {
         }
 
         const result = await pool.query(
-            "DELETE FROM categories WHERE id = $1 RETURNING *",
+            `DELETE FROM categories
+             WHERE id = $1
+               AND NOT EXISTS (SELECT 1 FROM products WHERE category_id = $1)
+             RETURNING id`,
             [id]
         );
 
         if (result.rowCount === 0) {
+            const inUse = await pool.query(
+                "SELECT COUNT(*)::int AS total FROM products WHERE category_id = $1",
+                [id]
+            );
+            const total = inUse.rows[0]?.total ?? 0;
+            if (total > 0) {
+                return res.status(409).json({
+                    success: false,
+                    message: `Categoria em uso por ${total} produto(s). Mova os produtos antes de excluir.`
+                });
+            }
             return res.status(404).json({
                 success: false,
                 message: "Categoria não encontrada"

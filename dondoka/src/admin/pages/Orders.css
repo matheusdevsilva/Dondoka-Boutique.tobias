@@ -95,7 +95,7 @@
     align-items: flex-start;
 }
 
-.order-card-top h3 {
+.order-card-top h2 {
     font-size: 1.05rem;
     font-weight: 500;
 }
@@ -182,4 +182,21 @@
 .orders-empty {
     color: #8a7380;
     padding: 24px 0;
+}
+
+.orders-feedback {
+    margin: 0 0 16px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.orders-feedback.ok {
+    background: #e8f6ee;
+    color: #1d6b3f;
+}
+
+.orders-feedback.error {
+    background: #fdecef;
+    color: #9b1236;
 }

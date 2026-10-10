@@ -1,14 +1,13 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { FaInstagram, FaWhatsapp } from "react-icons/fa";
+import { InstagramIcon, WhatsAppIcon } from "../components/BrandIcons";
 import { MapPin, Clock } from "lucide-react";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
 import {
     isWhatsAppConfigured,
     whatsappLink,
 } from "../utils/whatsapp";
 import { INSTAGRAM_HANDLE, INSTAGRAM_URL } from "../utils/social";
+import Seo from "../components/Seo";
 import "../styles/InfoPages.css";
 
 const STORE_ADDRESS =
@@ -34,14 +33,16 @@ export default function Contato() {
             .filter(Boolean)
             .join("\n");
 
-        window.open(whatsappLink(text), "_blank");
+        window.open(whatsappLink(text), "_blank", "noopener");
     }
 
     return (
         <>
-            <Header />
-
-            <main className="info-page contact-page">
+            <Seo
+                title="Contato"
+                description="Fale com a Dondoka Boutique pelo WhatsApp ou Instagram, ou visite a loja em Franco da Rocha - SP."
+            />
+            <div className="info-page contact-page">
                 <section className="info-hero">
                     <span>Fale conosco</span>
                     <h1>Contato</h1>
@@ -53,12 +54,13 @@ export default function Contato() {
 
                 <section className="info-content contact-layout">
                     <div className="contact-aside">
+                        <h2 className="sr-only">Canais de atendimento</h2>
                         <div className="contact-cards">
                             <article className="contact-card contact-card-accent">
                                 <span className="contact-card-label">Atendimento</span>
                                 <div className="contact-card-title">
-                                    <span className="contact-icon contact-icon-wa" aria-hidden>
-                                        <FaWhatsapp size={18} />
+                                    <span className="contact-icon contact-icon-wa" aria-hidden="true">
+                                        <WhatsAppIcon size={18} />
                                     </span>
                                     <h3>WhatsApp</h3>
                                 </div>
@@ -74,7 +76,7 @@ export default function Contato() {
                                         rel="noreferrer"
                                         className="info-btn contact-card-btn"
                                     >
-                                        <FaWhatsapp size={16} className="btn-icon" />
+                                        <WhatsAppIcon size={16} className="btn-icon" />
                                         Abrir conversa
                                     </a>
                                 ) : (
@@ -88,8 +90,8 @@ export default function Contato() {
                             <article className="contact-card">
                                 <span className="contact-card-label">Rede social</span>
                                 <div className="contact-card-title">
-                                    <span className="contact-icon contact-icon-ig" aria-hidden>
-                                        <FaInstagram size={18} />
+                                    <span className="contact-icon contact-icon-ig" aria-hidden="true">
+                                        <InstagramIcon size={18} />
                                     </span>
                                     <h3>Instagram</h3>
                                 </div>
@@ -104,7 +106,7 @@ export default function Contato() {
                                     rel="noreferrer"
                                     className="info-btn contact-card-btn contact-card-btn-ghost"
                                 >
-                                    <FaInstagram size={16} className="btn-icon" />
+                                    <InstagramIcon size={16} className="btn-icon" />
                                     Seguir no Instagram
                                 </a>
                             </article>
@@ -112,7 +114,7 @@ export default function Contato() {
                             <article className="contact-card">
                                 <span className="contact-card-label">Horário</span>
                                 <div className="contact-card-title">
-                                    <span className="contact-icon" aria-hidden>
+                                    <span className="contact-icon" aria-hidden="true">
                                         <Clock size={18} />
                                     </span>
                                     <h3>Segunda a sábado</h3>
@@ -150,6 +152,8 @@ export default function Contato() {
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     placeholder="Seu nome"
+                                    autoComplete="name"
+                                    maxLength={80}
                                 />
                             </label>
 
@@ -160,11 +164,12 @@ export default function Contato() {
                                     onChange={(e) => setMessage(e.target.value)}
                                     placeholder="Como podemos ajudar?"
                                     rows={5}
+                                    maxLength={1000}
                                 />
                             </label>
 
                             <button type="submit" className="info-btn">
-                                <FaWhatsapp size={16} className="btn-icon" />
+                                <WhatsAppIcon size={16} className="btn-icon" />
                                 Enviar no WhatsApp
                             </button>
                         </form>
@@ -174,7 +179,7 @@ export default function Contato() {
                         <div className="contact-map-head">
                             <span className="contact-card-label">Visite a boutique</span>
                             <div className="contact-card-title">
-                                <span className="contact-icon" aria-hidden>
+                                <span className="contact-icon" aria-hidden="true">
                                     <MapPin size={18} />
                                 </span>
                                 <h2>Onde estamos</h2>
@@ -186,7 +191,7 @@ export default function Contato() {
                                 rel="noreferrer"
                                 className="info-link"
                             >
-                                <MapPin size={14} className="contact-icon-inline" />
+                                <MapPin size={14} className="contact-icon-inline" aria-hidden="true" />
                                 Abrir no Google Maps
                             </a>
                         </div>
@@ -201,9 +206,7 @@ export default function Contato() {
                         </div>
                     </section>
                 </section>
-            </main>
-
-            <Footer />
+            </div>
         </>
     );
 }

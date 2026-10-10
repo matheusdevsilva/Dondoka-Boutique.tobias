@@ -73,7 +73,7 @@
     margin-bottom: 8px;
 }
 
-.admin-info h2 {
+.admin-info h1 {
     margin-bottom: 8px;
     font-size: 2rem;
     font-weight: 500;
@@ -84,7 +84,7 @@
     padding-bottom: 10px;
 }
 
-.admin-info h2::after {
+.admin-info h1::after {
     content: "";
     position: absolute;
     left: 50%;
@@ -103,52 +103,41 @@
     letter-spacing: 0.04em;
 }
 
+.login-field {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #5a4450;
+    margin-bottom: -6px;
+}
+
 .container .input-login {
     padding: 14px;
-    border: 1px solid #efe6ea;
+    border: 1px solid #d9c9d1;
     font-size: 15px;
     font-family: inherit;
     color: #2b1a22;
-    outline: none;
     transition: border-color 0.2s;
 }
 
-.container input:focus {
+.container input:focus-visible {
     border-color: #eb268f;
+    outline: 2px solid #eb268f;
+    outline-offset: 2px;
 }
 
-.login-options {
-    margin-top: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.container .input-login[aria-invalid="true"] {
+    border-color: #b3123f;
+}
+
+.login-error {
+    color: #b3123f;
     font-size: 13px;
-    color: #5a4450;
+    margin-top: -4px;
 }
 
-.remember {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-}
-
-.remember input {
-    accent-color: #eb268f;
-}
-
-.login-options a {
-    text-decoration: none;
-    color: #eb268f;
-    font-size: 12px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-
-.login-options a:hover {
-    text-decoration: underline;
-}
-
-.bnt-login {
+.btn-login {
     margin-top: 18px;
     padding: 14px;
     border: none;
@@ -164,8 +153,13 @@
     transition: 0.25s;
 }
 
-.bnt-login:hover {
+.btn-login:hover:not(:disabled) {
     background: #2b1a22;
+}
+
+.btn-login:disabled {
+    opacity: 0.7;
+    cursor: wait;
 }
 
 .login-footer {
@@ -209,13 +203,7 @@
         padding: 28px 20px;
     }
 
-    .admin-info h2 {
+    .admin-info h1 {
         font-size: 1.7rem;
-    }
-
-    .login-options {
-        flex-direction: column;
-        gap: 10px;
-        align-items: flex-start;
     }
 }

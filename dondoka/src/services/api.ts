@@ -1,36 +1,57 @@
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 
-const CUSTOMER_TOKEN_KEY = "dondoka_customer_token";
+const API_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+    baseURL: API_URL,
+    withCredentials: true,
+    timeout: 20_000,
+    headers: { "X-Requested-With": "XMLHttpRequest" },
 });
 
-api.interceptors.request.use((config) => {
-    const url = `${config.baseURL || ""}${config.url || ""}`;
-    const isAdmin = url.includes("/admin");
+type UnauthorizedListener = (scope: "admin" | "customer") => void;
+const unauthorizedListeners = new Set<UnauthorizedListener>();
 
-    if (isAdmin) {
-        const token = localStorage.getItem("token");
-        if (token) config.headers.set("Authorization", `Bearer ${token}`);
-    } else {
-        const customerToken = localStorage.getItem(CUSTOMER_TOKEN_KEY);
-        if (customerToken) {
-            config.headers.set("Authorization", `Bearer ${customerToken}`);
+/** Avisa contextos de sessão quando a API responde 401 (sessão expirada ou inválida). */
+export function onUnauthorized(listener: UnauthorizedListener) {
+    unauthorizedListeners.add(listener);
+    return () => {
+        unauthorizedListeners.delete(listener);
+    };
+}
+
+api.interceptors.response.use(undefined, (error) => {
+    if (isAxiosError(error) && error.response?.status === 401) {
+        const url = error.config?.url || "";
+        const isLoginAttempt = url.includes("/auth/login") || url.includes("/admin/auth");
+        if (!isLoginAttempt) {
+            const scope = url.startsWith("/admin") ? "admin" : "customer";
+            unauthorizedListeners.forEach((listener) => listener(scope));
         }
     }
-
-    return config;
+    return Promise.reject(error);
 });
 
+export function apiErrorMessage(error: unknown, fallback: string): string {
+    if (isAxiosError<{ message?: string }>(error)) {
+        return error.response?.data?.message || fallback;
+    }
+    return fallback;
+}
+
+export interface ApiResponse<T> {
+    success: boolean;
+    data: T;
+    meta?: { total: number; page: number; limit: number };
+}
+
 export function resolveImageUrl(imageUrl?: string | null): string {
-    if (!imageUrl) return "/placeholder.png";
+    if (!imageUrl) return "/placeholder.svg";
     if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
         return imageUrl;
     }
 
-    const apiBase = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-    const origin = apiBase.replace(/\/api\/?$/, "");
+    const origin = API_URL.startsWith("http") ? API_URL.replace(/\/api$/, "") : "";
     return `${origin}${imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`}`;
 }
 

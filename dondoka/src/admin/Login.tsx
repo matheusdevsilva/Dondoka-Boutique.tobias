@@ -1,111 +1,114 @@
-import api from "../services/api"
-import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { useLocation, useNavigate } from "react-router-dom"
+import api, { apiErrorMessage } from "../services/api"
 import logo from "../assets/logo.jpeg"
 import "./Login.css"
-import { useNavigate } from "react-router-dom";
 
+const loginSchema = z.object({
+    username: z.string().trim().min(1, "Informe o usuário"),
+    password: z.string().min(1, "Informe a senha"),
+})
+
+type LoginForm = z.infer<typeof loginSchema>
 
 export default function LoginAdmin() {
+    const navigate = useNavigate()
+    const location = useLocation()
+    const {
+        register,
+        handleSubmit,
+        setError,
+        formState: { errors, isSubmitting },
+    } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) })
 
-    const [username, setUsername] = useState<string>("")
-    const [password, setPassword] = useState<string>("")
-    const navigate = useNavigate();
-    async function handleSubmit(e: React.FormEvent) {
-
-        e.preventDefault()
-
+    async function onSubmit(values: LoginForm) {
         try {
-
-            if (!username || !password) {
-                alert("Os campos precisam ser preenchidos")
-                return; // <-- faltava isso
-            }
-            const response = await api.post("/admin/auth", {
-                username,
-                password
-            })
-
-            localStorage.setItem("token", response.data.token);
-            localStorage.setItem("user", JSON.stringify(response.data.user));
-
-            navigate("/admin/dashboard")
-
+            await api.post("/admin/auth", values)
+            const from = (location.state as { from?: string } | null)?.from
+            navigate(from?.startsWith("/admin/") ? from : "/admin/dashboard", { replace: true })
         } catch (error) {
-            console.error("Erro no login", error)
-            alert("Usuário ou senha inválidos")
+            setError("root", {
+                message: apiErrorMessage(error, "Não foi possível entrar. Tente novamente."),
+            })
         }
     }
 
     return (
         <div className="container-main-login">
-
-            <div className="container-left">
+            <div className="container-left" aria-hidden="true">
                 <div className="logo-area">
-                    <img src={logo} width={420} />
+                    <img src={logo} width={1003} height={570} alt="" />
                 </div>
-
             </div>
 
-            <div className="container-right">
-
+            <main className="container-right">
                 <div className="container-forms-login">
-
-                    <form className="container" onSubmit={handleSubmit}>
+                    <form className="container" onSubmit={handleSubmit(onSubmit)} noValidate>
                         <div className="admin-info">
-                            <h2>Sistema Admin</h2>
+                            <h1>Sistema Admin</h1>
                             <span>
                                 Painel administrativo da loja.
                                 <br />
                                 Gerencie produtos, vendas e clientes.
                             </span>
                         </div>
+
                         <div className="container">
-
-                            <input
-                                type="text"
-                                placeholder="Usuario"
-                                className="input-login"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                            />
-
-                            <input
-                                type="password"
-                                placeholder="Senha"
-                                className="input-login"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                            />
-
-                        </div>
-
-                        <div className="login-options">
-
-                            <label className="remember">
-                                <input type="checkbox" />
-                                Lembrar acesso
+                            <label className="login-field" htmlFor="admin-username">
+                                Usuário
                             </label>
+                            <input
+                                id="admin-username"
+                                type="text"
+                                autoComplete="username"
+                                className="input-login"
+                                aria-invalid={errors.username ? true : undefined}
+                                aria-describedby={errors.username ? "admin-username-error" : undefined}
+                                {...register("username")}
+                            />
+                            {errors.username && (
+                                <p className="login-error" id="admin-username-error">
+                                    {errors.username.message}
+                                </p>
+                            )}
 
-                            <a href="#">Esqueci minha senha</a>
+                            <label className="login-field" htmlFor="admin-password">
+                                Senha
+                            </label>
+                            <input
+                                id="admin-password"
+                                type="password"
+                                autoComplete="current-password"
+                                className="input-login"
+                                aria-invalid={errors.password ? true : undefined}
+                                aria-describedby={errors.password ? "admin-password-error" : undefined}
+                                {...register("password")}
+                            />
+                            {errors.password && (
+                                <p className="login-error" id="admin-password-error">
+                                    {errors.password.message}
+                                </p>
+                            )}
+                        </div>
 
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <button type="submit" className="bnt-login">
-                                Entrar
-                            </button>
-                        </div>
+                        {errors.root && (
+                            <p className="login-error" role="alert">
+                                {errors.root.message}
+                            </p>
+                        )}
+
+                        <button type="submit" className="btn-login" disabled={isSubmitting}>
+                            {isSubmitting ? "Entrando..." : "Entrar"}
+                        </button>
 
                         <div className="login-footer">
                             <p>Painel Dondoka Boutique v1.0</p>
-
                         </div>
-
                     </form>
-
                 </div>
-
-            </div>
-
+            </main>
         </div>
     )
 }

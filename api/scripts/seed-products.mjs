@@ -1,13 +1,7 @@
 import 'dotenv/config'
-import { getDatabaseUrl } from './db-url.mjs'
-import pg from 'pg'
+import { createPool } from './db-url.mjs'
 
-const url = getDatabaseUrl()
-
-const pool = new pg.Pool({
-  connectionString: url,
-  ssl: { rejectUnauthorized: false },
-})
+const pool = createPool()
 
 const products = [
   {
@@ -146,8 +140,8 @@ try {
 
     await client.query(
       `INSERT INTO products
-        (name, description, price, discount_price, category_id, brand, image_url, is_active)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,TRUE)`,
+        (name, description, price, discount_price, category_id, brand, image_url, is_active, stock)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,TRUE,10)`,
       [
         product.name,
         product.description,

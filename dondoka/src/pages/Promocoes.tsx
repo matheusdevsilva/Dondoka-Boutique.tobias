@@ -1,17 +1,15 @@
-import Header from "../components/Header";
-import Footer from "../components/Footer";
 import ShopCatalog from "../components/ShopCatalog";
+import Seo from "../components/Seo";
 
 export default function Promocoes() {
     return (
         <>
-            <Header />
+            <Seo title="Promoções" description="Peças selecionadas com condições especiais." />
             <ShopCatalog
                 title="Promoções"
                 subtitle="Peças selecionadas com condições especiais"
                 mode="promo"
             />
-            <Footer />
         </>
     );
 }

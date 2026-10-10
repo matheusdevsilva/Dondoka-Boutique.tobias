@@ -1,59 +1,34 @@
 import type { RequestHandler } from "express"
-import jwt from "jsonwebtoken"
-
-
-interface JwtPayload {
-    id: string
-    username?: string
-    email?: string
-    role?: string
-}
+import { readBearerToken, verifyToken } from "../utils/auth.js"
 
 const authMiddleware: RequestHandler = (req, res, next) => {
-    const authHeader = req.headers.authorization
+    const token = readBearerToken(req, "admin")
 
-    if (!authHeader) {
+    if (!token) {
         return res.status(401).json({
+            success: false,
             message: "Token não enviado",
         })
     }
 
-    const parts = authHeader.split(" ")
+    const decoded = verifyToken(token)
 
-    if (parts.length !== 2) {
+    if (!decoded) {
         return res.status(401).json({
-            message: "Token mal formatado",
-        })
-    }
-
-    const [scheme, token] = parts as [string, string]
-
-    if (!/^Bearer$/i.test(scheme)) {
-        return res.status(401).json({
-            message: "Token mal formatado",
-        })
-    }
-
-    try {
-        const decoded = jwt.verify(
-            token,
-            process.env.JWT_SECRET as string
-        ) as JwtPayload
-
-        req.user = decoded
-
-        if (decoded.role && decoded.role !== "admin") {
-            return res.status(403).json({
-                message: "Acesso restrito a administradores",
-            })
-        }
-
-        return next()
-    } catch {
-        return res.status(401).json({
+            success: false,
             message: "Token inválido ou expirado",
         })
     }
+
+    if (decoded.role !== "admin") {
+        return res.status(403).json({
+            success: false,
+            message: "Acesso restrito a administradores",
+        })
+    }
+
+    req.user = decoded
+    return next()
 }
 
 export default authMiddleware

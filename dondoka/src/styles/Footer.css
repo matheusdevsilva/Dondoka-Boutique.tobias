@@ -82,8 +82,8 @@
     background: rgba(235, 38, 143, 0.2);
 }
 
-.footer-column h4,
-.footer-news h4 {
+.footer-column h2,
+.footer-news h2 {
     font-family: var(--font-serif);
     font-size: 22px;
     font-weight: 500;
@@ -126,7 +126,6 @@
     flex: 1;
     padding: 14px;
     border: none;
-    outline: none;
     background: transparent;
     color: #fff;
     font-family: inherit;

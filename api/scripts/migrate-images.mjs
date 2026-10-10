@@ -1,13 +1,7 @@
 import 'dotenv/config'
-import { getDatabaseUrl } from './db-url.mjs'
-import pg from 'pg'
+import { createPool } from './db-url.mjs'
 
-const url = getDatabaseUrl()
-
-const pool = new pg.Pool({
-  connectionString: url,
-  ssl: { rejectUnauthorized: false },
-})
+const pool = createPool()
 
 try {
   const client = await pool.connect()

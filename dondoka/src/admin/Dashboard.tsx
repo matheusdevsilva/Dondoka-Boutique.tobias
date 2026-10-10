@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import api, { resolveImageUrl } from "../services/api";
+import api, { apiErrorMessage, resolveImageUrl, type ApiResponse } from "../services/api";
 import { formatBRL, productCover, productPrice, type ProductType } from "../types/product";
 import "./Dashboard.css";
 
@@ -12,59 +12,47 @@ interface Category {
 interface Stats {
     month_revenue: number;
     month_orders: number;
+    total_orders: number;
+    pending_orders: number;
+    total_customers: number;
+    total_products: number;
+    out_of_stock: number;
     top_products: { product_name: string; qty: number; revenue: number }[];
 }
 
 export default function Dashboard() {
     const [products, setProducts] = useState<ProductType[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
-    const [ordersCount, setOrdersCount] = useState(0);
-    const [pendingOrders, setPendingOrders] = useState(0);
-    const [customersCount, setCustomersCount] = useState(0);
     const [stats, setStats] = useState<Stats | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
     useEffect(() => {
-        async function load() {
-            try {
-                const [
-                    productsRes,
-                    categoriesRes,
-                    ordersRes,
-                    customersRes,
-                    statsRes,
-                ] = await Promise.all([
-                    api.get("/admin/products"),
-                    api.get("/admin/categories"),
-                    api.get("/admin/orders"),
-                    api.get("/admin/customers"),
-                    api.get("/admin/stats"),
-                ]);
+        const controller = new AbortController();
+        const { signal } = controller;
+        Promise.all([
+            api.get<ApiResponse<ProductType[]>>("/admin/products", { signal }),
+            api.get<ApiResponse<Category[]>>("/admin/categories", { signal }),
+            api.get<ApiResponse<Stats>>("/admin/stats", { signal }),
+        ])
+            .then(([productsRes, categoriesRes, statsRes]) => {
                 setProducts(productsRes.data.data || []);
                 setCategories(categoriesRes.data.data || []);
-                const orders = ordersRes.data.data || [];
-                setOrdersCount(orders.length);
-                setPendingOrders(
-                    orders.filter(
-                        (o: { status: string }) => o.status === "pending"
-                    ).length
-                );
-                setCustomersCount((customersRes.data.data || []).length);
                 setStats(statsRes.data.data || null);
-            } catch (error) {
-                console.error("Erro ao carregar dashboard:", error);
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        load();
+            })
+            .catch((err) => {
+                if (!signal.aborted) setError(apiErrorMessage(err, "Erro ao carregar o dashboard."));
+            })
+            .finally(() => {
+                if (!signal.aborted) setLoading(false);
+            });
+        return () => controller.abort();
     }, []);
 
-    const totalProducts = products.length;
     const latest = [...products]
         .sort((a, b) => Number(b.id) - Number(a.id))
         .slice(0, 6);
+    const show = (value: number | undefined) => (loading ? "—" : value ?? 0);
 
     const categoryName = (id?: number | string | null) =>
         categories.find((c) => String(c.id) === String(id))?.name || "—";
@@ -89,6 +77,12 @@ export default function Dashboard() {
                 </div>
             </div>
 
+            {error && (
+                <p className="dash-empty" role="alert">
+                    {error}
+                </p>
+            )}
+
             <div className="container-grid-dashboard">
                 <div className="card">
                     <span>Receita do mês</span>
@@ -100,33 +94,37 @@ export default function Dashboard() {
                 </div>
                 <div className="card">
                     <span>Pedidos do mês</span>
-                    <strong>{loading ? "—" : stats?.month_orders ?? 0}</strong>
+                    <strong>{show(stats?.month_orders)}</strong>
                 </div>
                 <div className="card">
                     <span>Pendentes</span>
-                    <strong>{loading ? "—" : pendingOrders}</strong>
+                    <strong>{show(stats?.pending_orders)}</strong>
                 </div>
                 <div className="card">
                     <span>Clientes</span>
-                    <strong>{loading ? "—" : customersCount}</strong>
+                    <strong>{show(stats?.total_customers)}</strong>
                 </div>
             </div>
 
             <div className="container-grid-dashboard secondary">
                 <div className="card">
                     <span>Produtos</span>
-                    <strong>{loading ? "—" : totalProducts}</strong>
+                    <strong>{show(stats?.total_products)}</strong>
                 </div>
                 <div className="card">
                     <span>Pedidos totais</span>
-                    <strong>{loading ? "—" : ordersCount}</strong>
+                    <strong>{show(stats?.total_orders)}</strong>
+                </div>
+                <div className="card">
+                    <span>Esgotados (ativos)</span>
+                    <strong>{show(stats?.out_of_stock)}</strong>
                 </div>
             </div>
 
             <div className="dashboard-tables">
                 <div className="table-card">
                     <div className="table-card-head">
-                        <h4>Mais vendidos</h4>
+                        <h2>Mais vendidos</h2>
                         <Link to="/admin/pedidos">Ver pedidos</Link>
                     </div>
                     {loading && <p className="dash-empty">Carregando...</p>}
@@ -149,7 +147,7 @@ export default function Dashboard() {
 
                 <div className="table-card">
                     <div className="table-card-head">
-                        <h4>Últimos produtos</h4>
+                        <h2>Últimos produtos</h2>
                         <Link to="/admin/produtos">Ver todos</Link>
                     </div>
 
@@ -163,10 +161,10 @@ export default function Dashboard() {
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Produto</th>
-                                    <th>Categoria</th>
-                                    <th>Preço</th>
-                                    <th>Status</th>
+                                    <th scope="col">Produto</th>
+                                    <th scope="col">Categoria</th>
+                                    <th scope="col">Preço</th>
+                                    <th scope="col">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -178,7 +176,8 @@ export default function Dashboard() {
                                                     src={resolveImageUrl(
                                                         productCover(product)
                                                     )}
-                                                    alt={product.name}
+                                                    alt=""
+                                                    loading="lazy"
                                                 />
                                                 <span>{product.name}</span>
                                             </div>

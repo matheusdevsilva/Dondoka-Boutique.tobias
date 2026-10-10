@@ -57,7 +57,6 @@
     background: #fff;
     font-family: inherit;
     color: #2b1a22;
-    outline: none;
 }
 
 .products-controls input:focus,
@@ -66,6 +65,8 @@
 }
 
 .products-grid {
+    list-style: none;
+    padding: 0;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
     gap: 18px;
@@ -104,7 +105,7 @@
     gap: 8px;
 }
 
-.product-card h3 {
+.products-page .product-card h2 {
     font-size: 15px;
     font-weight: 500;
     color: #2b1a22;
@@ -212,7 +213,7 @@
     border: 1px solid #efe6ea;
 }
 
-.modal-content h3 {
+.modal-content h2 {
     font-family: var(--font-serif, "Cormorant Garamond", Georgia, serif);
     font-size: 1.6rem;
     margin-bottom: 8px;
@@ -244,4 +245,8 @@
     .products-controls {
         grid-template-columns: 1fr;
     }
+}
+
+.products-error {
+    color: #9b1236;
 }

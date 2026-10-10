@@ -1,9 +1,12 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import api, { resolveImageUrl } from "../../services/api";
-import { productImages } from "../../types/product";
+import api, { apiErrorMessage, resolveImageUrl, type ApiResponse } from "../../services/api";
+import { productImages, type ProductType } from "../../types/product";
 import { Package, Tag, BadgePercent, X } from "lucide-react";
 import "../pages/CadProducts.css";
+
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 interface Category {
     id: string | number;
@@ -51,45 +54,52 @@ export default function ProductForm({ mode, productId }: ProductFormProps) {
         }).format(Number(value) || 0);
     }
 
-    async function loadCategories() {
-        try {
-            const response = await api.get("/admin/categories");
-            setCategoria(response.data.data || []);
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
-    async function loadProduct() {
-        if (!productId) return;
-        try {
-            const response = await api.get(`/admin/product/${productId}`);
-            const p = response.data;
-            setName(p.name || "");
-            setPrice(String(p.price ?? ""));
-            setDiscountPrice(p.discount_price ? String(p.discount_price) : "");
-            setDescription(p.description || "");
-            setBrand(p.brand || "Dondoka");
-            setCategoryId(p.category_id ? String(p.category_id) : "");
-            setIsActive(p.is_active !== false);
-            setStock(String(p.stock ?? 0));
-            setSizes(p.sizes || "P,M,G,GG");
-            setCurrentImages(productImages(p));
-            setActivePreview(0);
-        } catch (error) {
-            console.error(error);
-            setMessage("Não foi possível carregar o produto.");
-        }
-    }
-
     useEffect(() => {
-        loadCategories();
-        if (mode === "edit") loadProduct();
+        const controller = new AbortController();
+        const { signal } = controller;
+
+        api.get<ApiResponse<Category[]>>("/admin/categories", { signal })
+            .then((response) => setCategoria(response.data.data || []))
+            .catch((error) => {
+                if (!signal.aborted) console.error(error);
+            });
+
+        if (mode === "edit" && productId) {
+            api.get<ApiResponse<ProductType>>(`/admin/product/${productId}`, { signal })
+                .then((response) => {
+                    const p = response.data.data;
+                    setName(p.name || "");
+                    setPrice(String(p.price ?? ""));
+                    setDiscountPrice(p.discount_price ? String(p.discount_price) : "");
+                    setDescription(p.description || "");
+                    setBrand(p.brand || "Dondoka");
+                    setCategoryId(p.category_id ? String(p.category_id) : "");
+                    setIsActive(p.is_active !== false);
+                    setStock(String(p.stock ?? 0));
+                    setSizes(Array.isArray(p.sizes) ? p.sizes.join(",") : p.sizes || "P,M,G,GG");
+                    setCurrentImages(productImages(p));
+                    setActivePreview(0);
+                })
+                .catch(() => {
+                    if (!signal.aborted) setMessage("Não foi possível carregar o produto.");
+                });
+        }
+
+        return () => controller.abort();
     }, [mode, productId]);
 
     function handleFiles(e: React.ChangeEvent<HTMLInputElement>) {
         if (!e.target.files) return;
-        const array = Array.from(e.target.files).slice(0, 10);
+        const selected = Array.from(e.target.files);
+        const array = selected
+            .filter((file) => IMAGE_TYPES.includes(file.type) && file.size <= MAX_IMAGE_BYTES)
+            .slice(0, 10);
+        setMessage(
+            array.length < selected.length
+                ? "Algumas imagens foram ignoradas: use JPG, PNG ou WebP de até 5 MB (máximo 10)."
+                : ""
+        );
+        previews.forEach((url) => URL.revokeObjectURL(url));
         setFiles(array);
         setPreviews(array.map((file) => URL.createObjectURL(file)));
         setActivePreview(0);
@@ -113,8 +123,13 @@ export default function ProductForm({ mode, productId }: ProductFormProps) {
         e.preventDefault();
         setMessage("");
 
-        if (!name || !price || !categoryId) {
+        if (!name.trim() || !Number(price) || !categoryId) {
             setMessage("Preencha nome, preço e categoria.");
+            return;
+        }
+
+        if (discountPrice && Number(discountPrice) >= Number(price)) {
+            setMessage("O preço promocional precisa ser menor que o preço.");
             return;
         }
 
@@ -153,8 +168,7 @@ export default function ProductForm({ mode, productId }: ProductFormProps) {
                 setTimeout(() => navigate("/admin/produtos"), 800);
             }
         } catch (error) {
-            console.error(error);
-            setMessage("Erro ao salvar produto.");
+            setMessage(apiErrorMessage(error, "Erro ao salvar produto."));
         } finally {
             setSaving(false);
         }
@@ -173,7 +187,7 @@ export default function ProductForm({ mode, productId }: ProductFormProps) {
 
                 {previewSrc ? (
                     <div className="carousel">
-                        <img src={previewSrc} alt={name || "Prévia"} />
+                        <img src={previewSrc} alt={`Prévia de ${name || "produto"}`} />
                     </div>
                 ) : (
                     <div className="preview-empty">Nenhuma imagem</div>
@@ -189,6 +203,8 @@ export default function ProductForm({ mode, productId }: ProductFormProps) {
                                     activePreview === index ? "active" : ""
                                 }
                                 onClick={() => setActivePreview(index)}
+                                aria-label={`Ver imagem ${index + 1}`}
+                                aria-pressed={activePreview === index}
                             >
                                 <img src={src} alt="" />
                             </button>
@@ -246,33 +262,42 @@ export default function ProductForm({ mode, productId }: ProductFormProps) {
                     <p>Campos alinhados com o catálogo da loja</p>
                 </div>
 
-                {message && <div className="form-message">{message}</div>}
+                <div className="form-message" role="status" aria-live="polite" hidden={!message}>
+                    {message}
+                </div>
 
                 <div className="container-input-products">
-                    <label>Nome</label>
+                    <label htmlFor="product-name">Nome</label>
                     <input
+                        id="product-name"
                         value={name}
                         className="input-products"
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Ex: Vestido Floral Midi"
+                        maxLength={160}
+                        required
                     />
                 </div>
 
                 <div className="container-grid-products">
                     <div className="container-input-products">
-                        <label>Preço</label>
+                        <label htmlFor="product-price">Preço</label>
                         <input
+                            id="product-price"
                             type="text"
                             className="input-products"
+                            inputMode="numeric"
                             value={formatBRL(price || 0)}
                             onChange={(e) => handleMoney(e, setPrice)}
                         />
                     </div>
                     <div className="container-input-products">
-                        <label>Preço promocional</label>
+                        <label htmlFor="product-discount">Preço promocional</label>
                         <input
+                            id="product-discount"
                             type="text"
                             className="input-products"
+                            inputMode="numeric"
                             value={
                                 discountPrice ? formatBRL(discountPrice) : ""
                             }
@@ -284,8 +309,9 @@ export default function ProductForm({ mode, productId }: ProductFormProps) {
 
                 <div className="container-grid-products">
                     <div className="container-input-products">
-                        <label>Categoria</label>
+                        <label htmlFor="product-category">Categoria</label>
                         <select
+                            id="product-category"
                             className="input-products"
                             value={categoryId}
                             onChange={(e) => setCategoryId(e.target.value)}
@@ -299,8 +325,9 @@ export default function ProductForm({ mode, productId }: ProductFormProps) {
                         </select>
                     </div>
                     <div className="container-input-products">
-                        <label>Marca</label>
+                        <label htmlFor="product-brand">Marca</label>
                         <input
+                            id="product-brand"
                             className="input-products"
                             value={brand}
                             onChange={(e) => setBrand(e.target.value)}
@@ -309,8 +336,9 @@ export default function ProductForm({ mode, productId }: ProductFormProps) {
                 </div>
 
                 <div className="container-input-products">
-                    <label>Descrição</label>
+                    <label htmlFor="product-description">Descrição</label>
                     <textarea
+                        id="product-description"
                         className="input-description-products"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
@@ -320,18 +348,21 @@ export default function ProductForm({ mode, productId }: ProductFormProps) {
 
                 <div className="container-grid-products">
                     <div className="container-input-products">
-                        <label>Estoque</label>
+                        <label htmlFor="product-stock">Estoque</label>
                         <input
+                            id="product-stock"
                             type="number"
                             className="input-products"
                             value={stock}
                             min={0}
+                            step={1}
                             onChange={(e) => setStock(e.target.value)}
                         />
                     </div>
                     <div className="container-input-products">
-                        <label>Tamanhos (separados por vírgula)</label>
+                        <label htmlFor="product-sizes">Tamanhos (separados por vírgula)</label>
                         <input
+                            id="product-sizes"
                             className="input-products"
                             value={sizes}
                             onChange={(e) => setSizes(e.target.value)}
@@ -341,10 +372,11 @@ export default function ProductForm({ mode, productId }: ProductFormProps) {
                 </div>
 
                 <div className="container-input-products">
-                    <label>Imagens (até 10)</label>
+                    <label htmlFor="product-images">Imagens (até 10)</label>
                     <input
+                        id="product-images"
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/webp"
                         multiple
                         onChange={handleFiles}
                     />
@@ -362,9 +394,9 @@ export default function ProductForm({ mode, productId }: ProductFormProps) {
                                 <button
                                     type="button"
                                     onClick={() => removeCurrentImage(index)}
-                                    aria-label="Remover imagem"
+                                    aria-label={`Remover imagem atual ${index + 1}`}
                                 >
-                                    <X size={14} />
+                                    <X size={14} aria-hidden="true" />
                                 </button>
                             </div>
                         ))}
@@ -375,9 +407,9 @@ export default function ProductForm({ mode, productId }: ProductFormProps) {
                                 <button
                                     type="button"
                                     onClick={() => removeNewFile(index)}
-                                    aria-label="Remover imagem"
+                                    aria-label={`Remover imagem nova ${index + 1}`}
                                 >
-                                    <X size={14} />
+                                    <X size={14} aria-hidden="true" />
                                 </button>
                             </div>
                         ))}
@@ -385,8 +417,9 @@ export default function ProductForm({ mode, productId }: ProductFormProps) {
                 )}
 
                 <div className="container-input-products">
-                    <label>Status</label>
+                    <label htmlFor="product-status">Status</label>
                     <select
+                        id="product-status"
                         className="input-products"
                         value={isActive ? "true" : "false"}
                         onChange={(e) => setIsActive(e.target.value === "true")}
@@ -404,7 +437,7 @@ export default function ProductForm({ mode, productId }: ProductFormProps) {
                     >
                         Cancelar
                     </button>
-                    <button className="bnt-cad-product" disabled={saving}>
+                    <button type="submit" className="bnt-cad-product" disabled={saving}>
                         {saving
                             ? "Salvando..."
                             : mode === "create"

@@ -1,73 +1,38 @@
-# React + TypeScript + Vite
+# Loja Dondoka Boutique (front)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + React Router 7 + Vite + TypeScript (strict). Inclui a vitrine e o painel `/admin`.
 
-Currently, two official plugins are available:
+## Rodar local
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+cp .env.example .env
+npm run dev        # http://localhost:5173
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Sem `VITE_API_URL`, o front chama `/api` e o Vite faz proxy para `VITE_PROXY_TARGET` (padrão `http://localhost:5000`). Assim front e API ficam na mesma origem e o cookie de sessão funciona com `SameSite=Lax`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Variáveis
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+| Variável | Uso |
+| --- | --- |
+| `VITE_API_URL` | URL da API com `/api`. Padrão: `/api` (mesma origem). |
+| `VITE_PROXY_TARGET` | Destino do proxy `/api` e `/uploads` no `npm run dev`. |
+| `VITE_WHATSAPP` | Número da loja com DDI, só dígitos. |
+| `VITE_INSTAGRAM` | URL do perfil. |
+
+As variáveis `VITE_*` entram no build: mude e gere o build de novo.
+
+## Scripts
+
+- `npm run lint` — ESLint (inclui as regras do React Compiler)
+- `npm run build` — `tsc -b` + build do Vite em `dist/`
+- `npm run preview` — serve o `dist/`
+
+## Estrutura
+
+- `src/routes` — rotas com carregamento sob demanda; a loja compartilha um único layout
+- `src/components` — Header, sacola, checkout (carregado só ao finalizar), `Modal`, `Seo`
+- `src/context` — sacola e favoritos (sincronizados entre abas e com a conta)
+- `src/admin` — painel; a sessão vem de `GET /api/admin/me`
+- Formulários de checkout, conta e login admin usam react-hook-form + Zod

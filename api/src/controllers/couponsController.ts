@@ -1,12 +1,42 @@
 import type { Request, Response } from "express"
 import pool from "../database/db.js"
+import { cleanText, toPositiveInt } from "../utils/validation.js"
+
+/** Subtotal recalculado com os preços do banco; o cliente só informa id e quantidade. */
+async function subtotalFromItems(raw: unknown): Promise<number> {
+    if (!Array.isArray(raw)) return 0
+    const quantities = new Map<number, number>()
+    for (const item of raw.slice(0, 50)) {
+        const id = toPositiveInt(item?.id ?? item?.product_id)
+        const qty = toPositiveInt(item?.quantity)
+        if (id && qty) quantities.set(id, (quantities.get(id) || 0) + Math.min(qty, 20))
+    }
+    if (quantities.size === 0) return 0
+
+    const products = await pool.query(
+        `SELECT id, price, discount_price FROM products
+         WHERE id = ANY($1::int[]) AND is_active = TRUE`,
+        [[...quantities.keys()]]
+    )
+    const total = products.rows.reduce((acc, row) => {
+        const price = Number(row.price)
+        const discount = Number(row.discount_price)
+        const unit = discount > 0 && discount < price ? discount : price
+        return acc + unit * (quantities.get(Number(row.id)) || 0)
+    }, 0)
+    return Math.round(total * 100) / 100
+}
+
+function parseCouponValue(type: string, value: unknown): number | null {
+    const n = Number(value)
+    if (!Number.isFinite(n) || n <= 0) return null
+    if (type === "percent" && n > 100) return null
+    return n
+}
 
 export async function validateCoupon(req: Request, res: Response) {
     try {
-        const code = String(req.body.code || req.query.code || "")
-            .trim()
-            .toUpperCase()
-        const subtotal = Number(req.body.subtotal ?? req.query.subtotal ?? 0)
+        const code = cleanText(req.body?.code, 40).toUpperCase()
 
         if (!code) {
             return res.status(400).json({
@@ -27,6 +57,7 @@ export async function validateCoupon(req: Request, res: Response) {
             })
         }
 
+        const subtotal = await subtotalFromItems(req.body?.items)
         const coupon = result.rows[0]
         const check = validateCouponRow(coupon, subtotal)
         if (!check.ok) {
@@ -36,20 +67,19 @@ export async function validateCoupon(req: Request, res: Response) {
             })
         }
 
-        const discount = calcDiscount(coupon, subtotal)
-
         return res.status(200).json({
             success: true,
             data: {
                 code: coupon.code,
                 type: coupon.type,
                 value: Number(coupon.value),
-                discount,
+                subtotal,
+                discount: calcDiscount(coupon, subtotal),
             },
         })
     } catch (error) {
         console.error(error)
-        return res.status(500).json({ message: "Erro ao validar cupom" })
+        return res.status(500).json({ success: false, message: "Erro ao validar cupom" })
     }
 }
 
@@ -92,7 +122,8 @@ export function calcDiscount(
     if (coupon.type === "fixed") {
         return Math.min(subtotal, value)
     }
-    return Math.round(subtotal * (value / 100) * 100) / 100
+    const percent = Math.min(100, Math.max(0, value))
+    return Math.round(subtotal * (percent / 100) * 100) / 100
 }
 
 export async function getCoupons(_req: Request, res: Response) {
@@ -133,6 +164,14 @@ export async function createCoupon(req: Request, res: Response) {
             })
         }
 
+        const parsedValue = parseCouponValue(type, value)
+        if (parsedValue === null) {
+            return res.status(400).json({
+                success: false,
+                message: "Valor inválido (percentual entre 0 e 100)",
+            })
+        }
+
         const result = await pool.query(
             `INSERT INTO coupons
              (code, type, value, min_order, max_uses, expires_at, is_active)
@@ -141,7 +180,7 @@ export async function createCoupon(req: Request, res: Response) {
             [
                 String(code).trim().toUpperCase(),
                 type,
-                Number(value),
+                parsedValue,
                 Number(min_order) || 0,
                 max_uses === "" || max_uses == null ? null : Number(max_uses),
                 expires_at || null,
@@ -184,6 +223,17 @@ export async function updateCoupon(req: Request, res: Response) {
             return res.status(404).json({ message: "Cupom não encontrado" })
         }
         const c = current.rows[0]
+        const nextType = type || c.type
+        if (!["percent", "fixed"].includes(nextType)) {
+            return res.status(400).json({ success: false, message: "Tipo inválido" })
+        }
+        const nextValue = parseCouponValue(nextType, value != null ? value : c.value)
+        if (nextValue === null) {
+            return res.status(400).json({
+                success: false,
+                message: "Valor inválido (percentual entre 0 e 100)",
+            })
+        }
 
         const result = await pool.query(
             `UPDATE coupons SET
@@ -198,8 +248,8 @@ export async function updateCoupon(req: Request, res: Response) {
              RETURNING *`,
             [
                 code ? String(code).trim().toUpperCase() : c.code,
-                type || c.type,
-                value != null ? Number(value) : c.value,
+                nextType,
+                nextValue,
                 min_order != null ? Number(min_order) : c.min_order,
                 max_uses === "" || max_uses === undefined
                     ? c.max_uses

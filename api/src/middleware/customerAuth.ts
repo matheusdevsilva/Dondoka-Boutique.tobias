@@ -1,64 +1,35 @@
 import type { RequestHandler } from "express"
-import jwt from "jsonwebtoken"
+import { readBearerToken, verifyToken } from "../utils/auth.js"
 
-interface JwtPayload {
-    id: string
-    username?: string
-    email?: string
-    role?: string
-}
-
-/** Exige token de cliente (role = customer). */
+/** Exige sessão de cliente (role = customer). */
 export const customerAuth: RequestHandler = (req, res, next) => {
-    const authHeader = req.headers.authorization
+    const token = readBearerToken(req, "customer")
 
-    if (!authHeader) {
-        return res.status(401).json({ message: "Token não enviado" })
+    if (!token) {
+        return res.status(401).json({ success: false, message: "Token não enviado" })
     }
 
-    const parts = authHeader.split(" ")
-    if (parts.length !== 2 || !/^Bearer$/i.test(parts[0] || "")) {
-        return res.status(401).json({ message: "Token mal formatado" })
+    const decoded = verifyToken(token)
+
+    if (!decoded) {
+        return res.status(401).json({ success: false, message: "Token inválido ou expirado" })
     }
 
-    try {
-        const decoded = jwt.verify(
-            parts[1] as string,
-            process.env.JWT_SECRET as string
-        ) as JwtPayload
-
-        if (decoded.role !== "customer") {
-            return res.status(403).json({ message: "Acesso negado" })
-        }
-
-        req.user = decoded
-        return next()
-    } catch {
-        return res.status(401).json({ message: "Token inválido ou expirado" })
+    if (decoded.role !== "customer") {
+        return res.status(403).json({ success: false, message: "Acesso negado" })
     }
+
+    req.user = decoded
+    return next()
 }
 
-/** Anexa cliente se houver token válido; não bloqueia guest. */
+/** Anexa cliente se houver sessão válida; não bloqueia guest. */
 export const optionalCustomerAuth: RequestHandler = (req, _res, next) => {
-    const authHeader = req.headers.authorization
-    if (!authHeader) return next()
+    const token = readBearerToken(req, "customer")
+    const decoded = token ? verifyToken(token) : null
 
-    const parts = authHeader.split(" ")
-    if (parts.length !== 2 || !/^Bearer$/i.test(parts[0] || "")) {
-        return next()
-    }
-
-    try {
-        const decoded = jwt.verify(
-            parts[1] as string,
-            process.env.JWT_SECRET as string
-        ) as JwtPayload
-
-        if (decoded.role === "customer") {
-            req.user = decoded
-        }
-    } catch {
-        /* ignore */
+    if (decoded?.role === "customer") {
+        req.user = decoded
     }
 
     return next()

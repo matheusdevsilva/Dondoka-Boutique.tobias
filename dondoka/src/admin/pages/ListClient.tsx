@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
-import api, { resolveImageUrl } from "../../services/api";
-import { formatBRL } from "../../types/product";
+import { useEffect, useState, type FormEvent } from "react";
+import api, { apiErrorMessage, resolveImageUrl, type ApiResponse } from "../../services/api";
+import Modal from "../../components/Modal";
+import { formatBRL, productPrice } from "../../types/product";
 import "./ListClient.css";
 
 interface CustomerRow {
@@ -33,7 +34,7 @@ interface CustomerDetail extends CustomerRow {
         id: number;
         name: string;
         price: number;
-        discount_price?: number;
+        discount_price?: number | null;
         image_url?: string;
     }[];
 }
@@ -59,38 +60,43 @@ export default function ListClient() {
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [message, setMessage] = useState("");
 
-    async function loadCustomers() {
-        try {
-            setLoading(true);
-            const res = await api.get("/admin/customers");
-            setCustomers(res.data.data || []);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    }
+    const [listError, setListError] = useState("");
+
+    useEffect(() => {
+        const controller = new AbortController();
+        api.get<ApiResponse<CustomerRow[]>>("/admin/customers", { signal: controller.signal })
+            .then((res) => setCustomers(res.data.data || []))
+            .catch((error) => {
+                if (!controller.signal.aborted) {
+                    setListError(apiErrorMessage(error, "Erro ao carregar clientes."));
+                }
+            })
+            .finally(() => {
+                if (!controller.signal.aborted) setLoading(false);
+            });
+        return () => controller.abort();
+    }, []);
 
     async function openDetail(id: number) {
         try {
             setDetailLoading(true);
             setMessage("");
             setEditing(false);
-            const res = await api.get(`/admin/customers/${id}`);
-            const data = res.data.data as CustomerDetail;
+            const res = await api.get<ApiResponse<CustomerDetail>>(`/admin/customers/${id}`);
+            const data = res.data.data;
             setSelected(data);
             setEditName(data.name);
             setEditEmail(data.email);
             setEditPhone(data.phone);
         } catch (error) {
-            console.error(error);
-            setMessage("Não foi possível carregar o cliente.");
+            setMessage(apiErrorMessage(error, "Não foi possível carregar o cliente."));
         } finally {
             setDetailLoading(false);
         }
     }
 
-    async function saveEdit() {
+    async function saveEdit(e: FormEvent) {
+        e.preventDefault();
         if (!selected) return;
         try {
             setSaving(true);
@@ -109,9 +115,8 @@ export default function ListClient() {
             );
             setEditing(false);
             setMessage("Cliente atualizado.");
-        } catch (error: unknown) {
-            const err = error as { response?: { data?: { message?: string } } };
-            setMessage(err.response?.data?.message || "Erro ao salvar.");
+        } catch (error) {
+            setMessage(apiErrorMessage(error, "Erro ao salvar."));
         } finally {
             setSaving(false);
         }
@@ -123,16 +128,12 @@ export default function ListClient() {
             await api.delete(`/admin/customers/${deleteId}`);
             setCustomers((prev) => prev.filter((c) => c.id !== deleteId));
             if (selected?.id === deleteId) setSelected(null);
-            setDeleteId(null);
         } catch (error) {
-            console.error(error);
-            alert("Erro ao remover cliente");
+            setListError(apiErrorMessage(error, "Erro ao remover cliente."));
+        } finally {
+            setDeleteId(null);
         }
     }
-
-    useEffect(() => {
-        loadCustomers();
-    }, []);
 
     const filtered = customers.filter((c) => {
         const q = search.toLowerCase();
@@ -155,14 +156,21 @@ export default function ListClient() {
                     </p>
                 </div>
                 <input
-                    type="text"
+                    type="search"
+                    aria-label="Buscar cliente"
                     placeholder="Buscar nome, e-mail ou WhatsApp..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
             </div>
 
-            {loading && <p className="clients-empty">Carregando clientes...</p>}
+            {listError && (
+                <p className="client-message error" role="alert">
+                    {listError}
+                </p>
+            )}
+
+            {loading && <p className="clients-empty" role="status">Carregando clientes...</p>}
 
             {!loading && filtered.length === 0 && (
                 <p className="clients-empty">Nenhum cliente cadastrado ainda.</p>
@@ -179,9 +187,11 @@ export default function ListClient() {
                                     selected?.id === customer.id ? "active" : ""
                                 }`}
                                 onClick={() => openDetail(customer.id)}
+                                aria-pressed={selected?.id === customer.id}
+                                aria-controls="client-detail"
                             >
                                 <div>
-                                    <h3>{customer.name}</h3>
+                                    <span className="client-card-name">{customer.name}</span>
                                     <p>{customer.email}</p>
                                     <p>{customer.phone}</p>
                                 </div>
@@ -198,7 +208,7 @@ export default function ListClient() {
                         ))}
                     </div>
 
-                    <div className="client-detail">
+                    <section className="client-detail" id="client-detail" aria-live="polite" aria-label="Detalhes do cliente">
                         {!selected && !detailLoading && (
                             <p className="clients-empty">
                                 Selecione um cliente para ver detalhes.
@@ -241,14 +251,19 @@ export default function ListClient() {
                                 </div>
 
                                 {message && (
-                                    <p className="client-message">{message}</p>
+                                    <p className="client-message" role="status">
+                                        {message}
+                                    </p>
                                 )}
 
                                 {editing ? (
-                                    <div className="client-edit-form">
+                                    <form className="client-edit-form" onSubmit={saveEdit}>
                                         <label>
                                             Nome
                                             <input
+                                                autoComplete="off"
+                                                maxLength={120}
+                                                required
                                                 value={editName}
                                                 onChange={(e) =>
                                                     setEditName(e.target.value)
@@ -274,14 +289,10 @@ export default function ListClient() {
                                                 }
                                             />
                                         </label>
-                                        <button
-                                            type="button"
-                                            disabled={saving}
-                                            onClick={saveEdit}
-                                        >
+                                        <button type="submit" disabled={saving}>
                                             {saving ? "Salvando..." : "Salvar"}
                                         </button>
-                                    </div>
+                                    </form>
                                 ) : (
                                     <div className="client-info">
                                         <p>
@@ -355,17 +366,13 @@ export default function ListClient() {
                                                     src={resolveImageUrl(
                                                         item.image_url
                                                     )}
-                                                    alt={item.name}
+                                                    alt=""
+                                                    loading="lazy"
                                                 />
                                                 <div>
                                                     <strong>{item.name}</strong>
                                                     <span>
-                                                        {formatBRL(
-                                                            Number(
-                                                                item.discount_price ||
-                                                                    item.price
-                                                            )
-                                                        )}
+                                                        {formatBRL(productPrice(item))}
                                                     </span>
                                                 </div>
                                             </div>
@@ -374,39 +381,28 @@ export default function ListClient() {
                                 </section>
                             </>
                         )}
-                    </div>
+                    </section>
                 </div>
             )}
 
-            {deleteId && (
-                <div
-                    className="modal-overlay"
-                    onClick={() => setDeleteId(null)}
-                >
-                    <div
-                        className="modal-content delete"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <h3>Remover cliente?</h3>
-                        <p>
-                            Os pedidos continuam no histórico, mas sem vínculo
-                            com a conta.
-                        </p>
-                        <div className="modal-actions">
-                            <button type="button" onClick={() => setDeleteId(null)}>
-                                Cancelar
-                            </button>
-                            <button
-                                type="button"
-                                className="danger"
-                                onClick={confirmDelete}
-                            >
-                                Sim, remover
-                            </button>
-                        </div>
-                    </div>
+            <Modal
+                open={deleteId != null}
+                onClose={() => setDeleteId(null)}
+                title="Remover cliente?"
+                overlayClassName="modal-overlay"
+                panelClassName="modal-content delete"
+                headClassName="modal-head"
+            >
+                <p>Os pedidos continuam no histórico, mas sem vínculo com a conta.</p>
+                <div className="modal-actions">
+                    <button type="button" onClick={() => setDeleteId(null)}>
+                        Cancelar
+                    </button>
+                    <button type="button" className="danger" onClick={confirmDelete}>
+                        Sim, remover
+                    </button>
                 </div>
-            )}
+            </Modal>
         </div>
     );
 }

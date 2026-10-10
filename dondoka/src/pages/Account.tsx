@@ -1,26 +1,14 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-import { useAuth } from "../context/AuthContext";
-import api from "../services/api";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useAuth, type CustomerUser } from "../context/AuthContext";
+import api, { apiErrorMessage, type ApiResponse } from "../services/api";
+import Seo from "../components/Seo";
 import { formatBRL } from "../types/product";
+import type { OrderSummary } from "../utils/orders";
 import "../styles/Account.css";
-
-interface OrderItem {
-    product_name: string;
-    size?: string;
-    quantity: number;
-    unit_price: number;
-}
-
-interface Order {
-    id: number;
-    total: number;
-    status: string;
-    created_at: string;
-    items: OrderItem[];
-}
 
 const statusLabel: Record<string, string> = {
     pending: "Pendente",
@@ -29,210 +17,265 @@ const statusLabel: Record<string, string> = {
     cancelled: "Cancelado",
 };
 
-export default function Account() {
-    const { user, loading, login, register, logout } = useAuth();
-    const [mode, setMode] = useState<"login" | "register">("login");
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [phone, setPhone] = useState("");
-    const [password, setPassword] = useState("");
-    const [message, setMessage] = useState("");
-    const [submitting, setSubmitting] = useState(false);
-    const [orders, setOrders] = useState<Order[]>([]);
-    const [ordersLoading, setOrdersLoading] = useState(false);
-
-    useEffect(() => {
-        async function loadOrders() {
-            if (!user) {
-                setOrders([]);
-                return;
+const accountSchema = z
+    .object({
+        mode: z.enum(["login", "register"]),
+        name: z.string().trim(),
+        phone: z.string().trim(),
+        email: z.email("Informe um e-mail válido.").trim(),
+        password: z.string(),
+    })
+    .superRefine((values, ctx) => {
+        if (values.mode === "login") {
+            if (!values.password) {
+                ctx.addIssue({ code: "custom", path: ["password"], message: "Informe a senha." });
             }
-            try {
-                setOrdersLoading(true);
-                const res = await api.get("/auth/orders");
-                setOrders(res.data.data || []);
-            } catch (error) {
-                console.error(error);
-            } finally {
-                setOrdersLoading(false);
-            }
+            return;
         }
-        loadOrders();
-    }, [user]);
+        if (values.name.length < 2) {
+            ctx.addIssue({ code: "custom", path: ["name"], message: "Informe seu nome." });
+        }
+        if (values.phone.replace(/\D/g, "").length < 10) {
+            ctx.addIssue({ code: "custom", path: ["phone"], message: "Informe o WhatsApp com DDD." });
+        }
+        if (values.password.length < 8) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["password"],
+                message: "A senha precisa de pelo menos 8 caracteres.",
+            });
+        }
+    });
 
-    async function handleSubmit(e: FormEvent) {
-        e.preventDefault();
-        setMessage("");
+type AccountForm = z.infer<typeof accountSchema>;
+
+export default function Account() {
+    const { user, loading, login, register: registerCustomer, logout } = useAuth();
+    const [ordersState, setOrdersState] = useState<{ userId: CustomerUser["id"]; orders: OrderSummary[] } | null>(
+        null
+    );
+    const orders = user && ordersState?.userId === user.id ? ordersState.orders : [];
+    const ordersLoading = !!user && ordersState?.userId !== user.id;
+
+    const {
+        register,
+        handleSubmit,
+        control,
+        setValue,
+        setError,
+        resetField,
+        clearErrors,
+        formState: { errors, isSubmitting },
+    } = useForm<AccountForm>({
+        resolver: zodResolver(accountSchema),
+        defaultValues: { mode: "login", name: "", phone: "", email: "", password: "" },
+    });
+    const mode = useWatch({ control, name: "mode" });
+
+    const userId = user?.id;
+    useEffect(() => {
+        if (userId == null) return;
+        const controller = new AbortController();
+        api.get<ApiResponse<OrderSummary[]>>("/auth/orders", { signal: controller.signal })
+            .then((res) => setOrdersState({ userId, orders: res.data.data || [] }))
+            .catch((error) => {
+                if (controller.signal.aborted) return;
+                console.error(error);
+                setOrdersState({ userId, orders: [] });
+            });
+        return () => controller.abort();
+    }, [userId]);
+
+    function switchMode(next: AccountForm["mode"]) {
+        setValue("mode", next);
+        clearErrors();
+    }
+
+    async function onSubmit(values: AccountForm) {
         try {
-            setSubmitting(true);
-            if (mode === "login") {
-                await login(email, password);
+            if (values.mode === "login") {
+                await login(values.email, values.password);
             } else {
-                await register({ name, email, phone, password });
+                await registerCustomer({
+                    name: values.name,
+                    email: values.email,
+                    phone: values.phone,
+                    password: values.password,
+                });
             }
-            setPassword("");
-        } catch (error: unknown) {
-            const err = error as { response?: { data?: { message?: string } } };
-            setMessage(
-                err.response?.data?.message || "Não foi possível entrar."
-            );
-        } finally {
-            setSubmitting(false);
+            resetField("password");
+        } catch (error) {
+            setError("root", {
+                message: apiErrorMessage(
+                    error,
+                    values.mode === "login" ? "Não foi possível entrar." : "Não foi possível criar a conta."
+                ),
+            });
         }
     }
 
     return (
-        <>
-            <Header />
-            <main className="account-page">
-                <div className="account-intro">
-                    <h1>Minha conta</h1>
-                    <p>
-                        Cadastro opcional: salve pedidos e favoritos entre
-                        dispositivos. O checkout continua liberado sem login.
-                    </p>
-                </div>
+        <div className="account-page">
+            <Seo title="Minha conta" noIndex />
+            <div className="account-intro">
+                <h1>Minha conta</h1>
+                <p>
+                    Cadastro opcional: salve pedidos e favoritos entre dispositivos. O checkout continua liberado
+                    sem login.
+                </p>
+            </div>
 
-                {loading && <p className="account-state">Carregando...</p>}
+            {loading && (
+                <p className="account-state" role="status">
+                    Carregando...
+                </p>
+            )}
 
-                {!loading && !user && (
-                    <section className="account-auth">
-                        <div className="account-tabs">
-                            <button
-                                type="button"
-                                className={mode === "login" ? "active" : ""}
-                                onClick={() => setMode("login")}
-                            >
-                                Entrar
-                            </button>
-                            <button
-                                type="button"
-                                className={mode === "register" ? "active" : ""}
-                                onClick={() => setMode("register")}
-                            >
-                                Cadastrar
+            {!loading && !user && (
+                <section className="account-auth" aria-labelledby="account-form-title">
+                    <h2 id="account-form-title" className="sr-only">
+                        {mode === "login" ? "Entrar" : "Criar conta"}
+                    </h2>
+                    <div className="account-tabs" role="group" aria-label="Escolha uma opção">
+                        <button
+                            type="button"
+                            className={mode === "login" ? "active" : ""}
+                            aria-pressed={mode === "login"}
+                            onClick={() => switchMode("login")}
+                        >
+                            Entrar
+                        </button>
+                        <button
+                            type="button"
+                            className={mode === "register" ? "active" : ""}
+                            aria-pressed={mode === "register"}
+                            onClick={() => switchMode("register")}
+                        >
+                            Cadastrar
+                        </button>
+                    </div>
+
+                    <form onSubmit={handleSubmit(onSubmit)} noValidate>
+                        {mode === "register" && (
+                            <>
+                                <label>
+                                    Nome
+                                    <input
+                                        {...register("name")}
+                                        autoComplete="name"
+                                        aria-invalid={!!errors.name}
+                                        aria-describedby={errors.name ? "account-name-error" : undefined}
+                                    />
+                                </label>
+                                {errors.name && (
+                                    <p id="account-name-error" className="field-error">
+                                        {errors.name.message}
+                                    </p>
+                                )}
+                                <label>
+                                    WhatsApp
+                                    <input
+                                        {...register("phone")}
+                                        type="tel"
+                                        inputMode="tel"
+                                        autoComplete="tel"
+                                        placeholder="11999999999"
+                                        aria-invalid={!!errors.phone}
+                                        aria-describedby={errors.phone ? "account-phone-error" : undefined}
+                                    />
+                                </label>
+                                {errors.phone && (
+                                    <p id="account-phone-error" className="field-error">
+                                        {errors.phone.message}
+                                    </p>
+                                )}
+                            </>
+                        )}
+                        <label>
+                            E-mail
+                            <input
+                                {...register("email")}
+                                type="email"
+                                autoComplete="email"
+                                aria-invalid={!!errors.email}
+                                aria-describedby={errors.email ? "account-email-error" : undefined}
+                            />
+                        </label>
+                        {errors.email && (
+                            <p id="account-email-error" className="field-error">
+                                {errors.email.message}
+                            </p>
+                        )}
+                        <label>
+                            Senha
+                            <input
+                                {...register("password")}
+                                type="password"
+                                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                                aria-invalid={!!errors.password}
+                                aria-describedby={errors.password ? "account-password-error" : undefined}
+                            />
+                        </label>
+                        {errors.password && (
+                            <p id="account-password-error" className="field-error">
+                                {errors.password.message}
+                            </p>
+                        )}
+
+                        {errors.root && (
+                            <p className="account-error" role="alert">
+                                {errors.root.message}
+                            </p>
+                        )}
+
+                        <button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? "Aguarde..." : mode === "login" ? "Entrar" : "Criar conta"}
+                        </button>
+                    </form>
+                </section>
+            )}
+
+            {!loading && user && (
+                <section className="account-panel">
+                    <div className="account-profile">
+                        <div>
+                            <h2>{user.name}</h2>
+                            <p>{user.email}</p>
+                            <p>{user.phone}</p>
+                        </div>
+                        <div className="account-actions">
+                            <Link to="/favoritos">Ver favoritos</Link>
+                            <button type="button" onClick={() => void logout()}>
+                                Sair
                             </button>
                         </div>
+                    </div>
 
-                        <form onSubmit={handleSubmit}>
-                            {mode === "register" && (
-                                <>
-                                    <label>
-                                        Nome
-                                        <input
-                                            value={name}
-                                            onChange={(e) =>
-                                                setName(e.target.value)
-                                            }
-                                            required
-                                        />
-                                    </label>
-                                    <label>
-                                        WhatsApp
-                                        <input
-                                            value={phone}
-                                            onChange={(e) =>
-                                                setPhone(e.target.value)
-                                            }
-                                            placeholder="11999999999"
-                                            required
-                                        />
-                                    </label>
-                                </>
-                            )}
-                            <label>
-                                E-mail
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
-                                />
-                            </label>
-                            <label>
-                                Senha
-                                <input
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) =>
-                                        setPassword(e.target.value)
-                                    }
-                                    minLength={6}
-                                    required
-                                />
-                            </label>
-
-                            {message && (
-                                <p className="account-error">{message}</p>
-                            )}
-
-                            <button type="submit" disabled={submitting}>
-                                {submitting
-                                    ? "Aguarde..."
-                                    : mode === "login"
-                                      ? "Entrar"
-                                      : "Criar conta"}
-                            </button>
-                        </form>
-                    </section>
-                )}
-
-                {!loading && user && (
-                    <section className="account-panel">
-                        <div className="account-profile">
-                            <div>
-                                <h2>{user.name}</h2>
-                                <p>{user.email}</p>
-                                <p>{user.phone}</p>
-                            </div>
-                            <div className="account-actions">
-                                <Link to="/favoritos">Ver favoritos</Link>
-                                <button type="button" onClick={logout}>
-                                    Sair
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="account-orders">
-                            <h3>Meus pedidos</h3>
-                            {ordersLoading && <p>Carregando pedidos...</p>}
-                            {!ordersLoading && orders.length === 0 && (
-                                <p>Nenhum pedido ainda.</p>
-                            )}
-                            {orders.map((order) => (
-                                <article key={order.id} className="account-order">
-                                    <header>
-                                        <strong>Pedido #{order.id}</strong>
-                                        <span>
-                                            {statusLabel[order.status] ||
-                                                order.status}
-                                        </span>
-                                    </header>
-                                    <ul>
-                                        {order.items.map((item, index) => (
-                                            <li key={`${order.id}-${index}`}>
-                                                {item.product_name}
-                                                {item.size
-                                                    ? ` (${item.size})`
-                                                    : ""}{" "}
-                                                ×{item.quantity} —{" "}
-                                                {formatBRL(
-                                                    Number(item.unit_price) *
-                                                        item.quantity
-                                                )}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                    <footer>
-                                        Total {formatBRL(Number(order.total))}
-                                    </footer>
-                                </article>
-                            ))}
-                        </div>
-                    </section>
-                )}
-            </main>
-            <Footer />
-        </>
+                    <div className="account-orders">
+                        <h3>Meus pedidos</h3>
+                        {ordersLoading && <p role="status">Carregando pedidos...</p>}
+                        {!ordersLoading && orders.length === 0 && <p>Nenhum pedido ainda.</p>}
+                        {orders.map((order) => (
+                            <article key={order.id} className="account-order">
+                                <header>
+                                    <h4>Pedido #{order.id}</h4>
+                                    <span>{statusLabel[order.status] || order.status}</span>
+                                </header>
+                                <ul>
+                                    {order.items.map((item, index) => (
+                                        <li key={`${order.id}-${index}`}>
+                                            {item.product_name}
+                                            {item.size ? ` (${item.size})` : ""} ×{item.quantity} —{" "}
+                                            {formatBRL(Number(item.unit_price) * item.quantity)}
+                                        </li>
+                                    ))}
+                                </ul>
+                                <footer>Total {formatBRL(Number(order.total))}</footer>
+                            </article>
+                        ))}
+                    </div>
+                </section>
+            )}
+        </div>
     );
 }

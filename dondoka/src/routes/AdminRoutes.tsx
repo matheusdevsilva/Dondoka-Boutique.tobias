@@ -1,64 +1,94 @@
-import { useState, useEffect } from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import HeaderAdmin from "../admin/components/HeaderAdmin";
 import SidebarAdmin from "../admin/components/SidebarAdmin";
+import { AdminSessionContext, type AdminUser } from "../admin/AdminSession";
+import api, { onUnauthorized, type ApiResponse } from "../services/api";
+import PageLoader from "../components/PageLoader";
 import "../admin/components/LayoutAdmin.css";
 
-function isTokenValid(token: string): boolean {
-    try {
-        const parts = token.split(".");
-        if (parts.length !== 3 || !parts[1]) return false;
+type SessionState = { status: "loading" } | { status: "anonymous" } | { status: "ready"; user: AdminUser };
 
-        const payload = JSON.parse(atob(parts[1]));
-        if (!payload.exp) return true;
-
-        return payload.exp * 1000 > Date.now();
-    } catch {
-        return false;
-    }
-}
+const isNarrow = () => window.matchMedia("(max-width: 800px)").matches;
 
 export default function AdminRoute() {
+    const [collapsed, setCollapsed] = useState(isNarrow);
+    const [session, setSession] = useState<SessionState>({ status: "loading" });
+    const navigate = useNavigate();
+    const location = useLocation();
 
-    const [collapsed, setCollapsed] = useState(false);
-    const [auth, setAuth] = useState<boolean | null>(null);
-
-    const toggleSidebar = () => {
-        setCollapsed(prev => !prev);
-    };
-
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-
-        if (!token || !isTokenValid(token)) {
-            localStorage.removeItem("token");
-            localStorage.removeItem("user");
-            setAuth(false);
-            return;
-        }
-
-        setAuth(true);
-    }, []);
-
-    if (auth === null) {
-        return <div>Carregando...</div>;
+    const [path, setPath] = useState(location.pathname);
+    if (path !== location.pathname) {
+        setPath(location.pathname);
+        if (!collapsed && isNarrow()) setCollapsed(true);
     }
 
-    if (!auth) {
-        return <Navigate to="/admin/login" replace />;
+    useEffect(() => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+
+        const controller = new AbortController();
+        api.get<ApiResponse<AdminUser>>("/admin/me", { signal: controller.signal })
+            .then((res) => setSession({ status: "ready", user: res.data.data }))
+            .catch(() => {
+                if (!controller.signal.aborted) setSession({ status: "anonymous" });
+            });
+
+        const unsubscribe = onUnauthorized((scope) => {
+            if (scope === "admin") setSession({ status: "anonymous" });
+        });
+
+        return () => {
+            controller.abort();
+            unsubscribe();
+        };
+    }, []);
+
+    const logout = useCallback(async () => {
+        await api.post("/admin/logout").catch(() => undefined);
+        setSession({ status: "anonymous" });
+        navigate("/admin/login", { replace: true });
+    }, [navigate]);
+
+    const value = useMemo(
+        () => (session.status === "ready" ? { user: session.user, logout } : null),
+        [session, logout]
+    );
+
+    if (session.status === "loading") {
+        return <PageLoader label="Verificando acesso..." />;
+    }
+
+    if (session.status === "anonymous" || !value) {
+        return <Navigate to="/admin/login" replace state={{ from: location.pathname }} />;
     }
 
     return (
-        <div className="admin-layout">
-            <SidebarAdmin collapsed={collapsed} />
+        <AdminSessionContext.Provider value={value}>
+            <div
+                className="admin-layout"
+                onKeyDown={(e) => {
+                    if (e.key === "Escape" && !collapsed && isNarrow()) setCollapsed(true);
+                }}
+            >
+                <SidebarAdmin collapsed={collapsed} />
+                {!collapsed && (
+                    <div className="admin-backdrop" aria-hidden="true" onClick={() => setCollapsed(true)} />
+                )}
 
-            <div className={`admin-main ${collapsed ? "collapsed" : ""}`}>
-                <HeaderAdmin toggleSidebar={toggleSidebar} />
+                <div className={`admin-main ${collapsed ? "collapsed" : ""}`}>
+                    <HeaderAdmin
+                        collapsed={collapsed}
+                        toggleSidebar={() => setCollapsed((prev) => !prev)}
+                    />
 
-                <main className="admin-content">
-                    <Outlet />
-                </main>
+                    <main className="admin-content" id="conteudo" tabIndex={-1}>
+                        <Suspense fallback={<PageLoader />}>
+                            <Outlet />
+                        </Suspense>
+                    </main>
+                </div>
             </div>
-        </div>
+        </AdminSessionContext.Provider>
     );
 }

@@ -26,7 +26,8 @@
     width: 78px;
 }
 
-.sidebar-header h2 {
+.sidebar-brand {
+    margin: 0;
     font-family: "Cormorant Garamond", Georgia, serif;
     font-size: 1.5rem;
     font-weight: 500;
@@ -62,6 +63,16 @@
     background: rgba(235, 38, 143, 0.18);
     color: #fff;
     border-left-color: #eb268f;
+}
+
+.sidebar .item-toggle {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
 }
 
 .sidebar .item.store-link {
@@ -127,13 +138,15 @@
     z-index: 1000;
 }
 
-.header-admin h3 {
+.header-admin-title {
     font-family: "Cormorant Garamond", Georgia, serif;
     font-size: 1.45rem;
     font-weight: 500;
 }
 
 .menu-btn {
+    display: inline-flex;
+    align-items: center;
     background: #fff0f7;
     border: 1px solid #efe6ea;
     color: #eb268f;
@@ -238,8 +251,84 @@
     background: #eb268f;
 }
 
+.admin-backdrop {
+    display: none;
+}
+
 @media (max-width: 800px) {
     .user-info {
         display: none;
     }
+
+    .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        z-index: 1100;
+        overflow-y: auto;
+    }
+
+    .sidebar.collapsed {
+        width: 250px;
+        transform: translateX(-100%);
+        visibility: hidden;
+    }
+
+    .admin-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 1050;
+        background: rgba(43, 26, 34, 0.45);
+    }
+
+    .header-admin {
+        padding: 0 14px;
+    }
+
+    .header-admin-title {
+        display: none;
+    }
+
+    .admin-content {
+        padding: 22px 16px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sidebar {
+        transition: none;
+    }
+}
+
+.modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.modal-head h2 {
+    margin: 0;
+}
+
+.modal-head .modal-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.modal-content > form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.modal-content:focus {
+    outline: none;
 }

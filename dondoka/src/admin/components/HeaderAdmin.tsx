@@ -1,54 +1,42 @@
-import { useNavigate } from "react-router-dom";
-import { User } from "lucide-react";
-import { useEffect, useState } from "react";
-
-type AdminUser = {
-    id: number;
-    username: string;
-    role: string;
-};
+import { Menu, User } from "lucide-react";
+import { useAdminSession } from "../AdminSession";
 
 export default function HeaderAdmin({
+    collapsed,
     toggleSidebar,
 }: {
+    collapsed: boolean;
     toggleSidebar: () => void;
 }) {
-    const navigate = useNavigate();
-    const [user, setUser] = useState<AdminUser | null>(null);
-
-    useEffect(() => {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-    }, []);
-
-    function handleLogout() {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/admin/login");
-    }
+    const { user, logout } = useAdminSession();
 
     return (
         <header className="header-admin">
-            <button className="menu-btn" onClick={toggleSidebar}>
-                ☰
+            <button
+                type="button"
+                className="menu-btn"
+                onClick={toggleSidebar}
+                aria-label={collapsed ? "Expandir menu lateral" : "Recolher menu lateral"}
+                aria-expanded={!collapsed}
+                aria-controls="admin-sidebar"
+            >
+                <Menu size={20} aria-hidden="true" />
             </button>
 
-            <h3>Painel Admin</h3>
+            <p className="header-admin-title">Painel Admin</p>
 
             <div className="header-right">
                 <div className="user-box">
-                    <div className="avatar">
+                    <div className="avatar" aria-hidden="true">
                         <User size={18} />
                     </div>
                     <div className="user-info">
-                        <strong>{user?.username || "Admin"}</strong>
-                        <span>{user?.role || "admin"}</span>
+                        <strong>{user.username}</strong>
+                        <span>{user.role}</span>
                     </div>
                 </div>
 
-                <button className="logout-btn" onClick={handleLogout}>
+                <button type="button" className="logout-btn" onClick={logout}>
                     Sair
                 </button>
             </div>

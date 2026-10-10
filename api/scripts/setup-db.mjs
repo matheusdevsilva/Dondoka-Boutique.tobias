@@ -1,27 +1,8 @@
 import 'dotenv/config'
-import { getDatabaseUrl } from './db-url.mjs'
-import pg from 'pg'
+import { createPool } from './db-url.mjs'
 import bcrypt from 'bcrypt'
 
-const url = getDatabaseUrl()
-
-function shouldUseSsl(connectionUrl) {
-  if (process.env.DATABASE_SSL === "false") return false
-  if (process.env.DATABASE_SSL === "true") return true
-
-  try {
-    const host = new URL(connectionUrl).hostname
-    const localHosts = new Set(["localhost", "127.0.0.1", "::1", "db", "postgres"])
-    return !localHosts.has(host)
-  } catch {
-    return !connectionUrl.includes("localhost")
-  }
-}
-
-const pool = new pg.Pool({
-  connectionString: url,
-  ssl: shouldUseSsl(url) ? { rejectUnauthorized: false } : false,
-})
+const pool = createPool()
 
 const categories = [
   'Vestidos',
@@ -146,6 +127,15 @@ try {
     );
   `)
 
+  await client.query(`
+    CREATE INDEX IF NOT EXISTS idx_products_active_category ON products (is_active, category_id);
+    CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders (customer_id);
+    CREATE INDEX IF NOT EXISTS idx_orders_status_created ON orders (status, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items (order_id);
+    CREATE INDEX IF NOT EXISTS idx_product_reviews_product ON product_reviews (product_id);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_coupons_code_upper ON coupons (UPPER(code));
+  `)
+
   console.log('SCHEMA: OK')
 
   for (const name of categories) {
@@ -162,13 +152,25 @@ try {
 
   const adminCount = await client.query('SELECT COUNT(*)::int AS total FROM admin')
   if (adminCount.rows[0].total === 0) {
-    const hash = await bcrypt.hash('admin123', 10)
-    await client.query(
-      `INSERT INTO admin (name, username, email, password, role)
-       VALUES ($1, $2, $3, $4, $5)`,
-      ['Admin Dondoka', 'admin', 'admin@dondoka.com', hash, 'admin']
-    )
-    console.log('ADMIN: criado (username: admin / senha: admin123)')
+    const username = process.env.ADMIN_INITIAL_USERNAME || 'admin'
+    const password = process.env.ADMIN_INITIAL_PASSWORD || ''
+    if (password.length < 10) {
+      console.warn('ADMIN: nenhum admin criado. Defina ADMIN_INITIAL_PASSWORD (mín. 10 caracteres) e rode db:setup de novo.')
+    } else {
+      const hash = await bcrypt.hash(password, 12)
+      await client.query(
+        `INSERT INTO admin (name, username, email, password, role)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [
+          'Admin Dondoka',
+          username,
+          process.env.ADMIN_INITIAL_EMAIL || 'admin@dondoka.com',
+          hash,
+          'admin',
+        ]
+      )
+      console.log(`ADMIN: criado (username: ${username})`)
+    }
   } else {
     console.log('ADMIN: já existe')
   }

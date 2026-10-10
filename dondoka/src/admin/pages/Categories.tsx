@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import api from "../../services/api";
+import { useEffect, useState, type FormEvent } from "react";
+import api, { apiErrorMessage, type ApiResponse } from "../../services/api";
+import Modal from "../../components/Modal";
 import "./Categories.css";
 
 interface Category {
@@ -7,75 +8,73 @@ interface Category {
     name: string;
 }
 
+type Editing = { id: string | null; name: string };
+
 export default function Categories() {
-    const [nameCategoria, setNameCategoria] = useState("");
     const [categoria, setCategoria] = useState<Category[]>([]);
     const [search, setSearch] = useState("");
+    const [editing, setEditing] = useState<Editing | null>(null);
+    const [deleting, setDeleting] = useState<Category | null>(null);
+    const [formError, setFormError] = useState("");
+    const [pageError, setPageError] = useState("");
+    const [saving, setSaving] = useState(false);
 
-    const [openModal, setOpenModal] = useState(false);
-    const [openEditModal, setOpenEditModal] = useState(false);
-    const [openDeleteModal, setOpenDeleteModal] = useState(false);
+    const [version, setVersion] = useState(0);
+    const getCategoria = () => setVersion((v) => v + 1);
 
-    const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [editName, setEditName] = useState("");
+    useEffect(() => {
+        const controller = new AbortController();
+        api.get<ApiResponse<Category[]>>("/admin/categories", { signal: controller.signal })
+            .then((response) => setCategoria(response.data.data || []))
+            .catch((error) => {
+                if (!controller.signal.aborted) {
+                    setPageError(apiErrorMessage(error, "Erro ao carregar categorias."));
+                }
+            });
+        return () => controller.abort();
+    }, [version]);
 
-    async function getCategoria() {
-        try {
-            const response = await api.get("/admin/categories");
-            setCategoria(response.data.data);
-        } catch (error) {
-            console.error(error);
-        }
+    function openForm(category?: Category) {
+        setFormError("");
+        setEditing(category ? { id: category.id, name: category.name } : { id: null, name: "" });
     }
 
-    async function createCategoria() {
-        try {
-            if (!nameCategoria) return;
-
-            await api.post("/admin/categories/add", {
-                name: nameCategoria,
-            });
-
-            setNameCategoria("");
-            setOpenModal(false);
-            getCategoria();
-        } catch (error) {
-            console.error(error);
+    async function saveCategory(e: FormEvent) {
+        e.preventDefault();
+        if (!editing) return;
+        const name = editing.name.trim();
+        if (!name) {
+            setFormError("Informe o nome da categoria.");
+            return;
         }
-    }
 
-    async function saveEdit() {
-        if (!selectedId || !editName.trim()) return;
+        setSaving(true);
         try {
-            await api.put(`/admin/categories/edit/${selectedId}`, {
-                name: editName.trim(),
-            });
-            setOpenEditModal(false);
-            setSelectedId(null);
-            setEditName("");
+            if (editing.id) {
+                await api.put(`/admin/categories/edit/${editing.id}`, { name });
+            } else {
+                await api.post("/admin/categories/add", { name });
+            }
+            setEditing(null);
             getCategoria();
         } catch (error) {
-            console.error(error);
+            setFormError(apiErrorMessage(error, "Erro ao salvar categoria."));
+        } finally {
+            setSaving(false);
         }
     }
 
     async function confirmDelete() {
-        if (!selectedId) return;
-
+        if (!deleting) return;
         try {
-            await api.delete(`/admin/categories/delete/${selectedId}`);
-
-            setOpenDeleteModal(false);
-            setSelectedId(null);
+            await api.delete(`/admin/categories/delete/${deleting.id}`);
             getCategoria();
         } catch (error) {
-            console.error(error);
+            setPageError(apiErrorMessage(error, "Erro ao remover categoria."));
+        } finally {
+            setDeleting(null);
         }
     }
-
-    useEffect(() => {
-        getCategoria();
-    }, []);
 
     const filteredCategorias = categoria.filter((item) =>
         item.name.toLowerCase().includes(search.toLowerCase())
@@ -89,124 +88,110 @@ export default function Categories() {
             </div>
 
             <div className="categories-header">
+                <label htmlFor="category-search" className="sr-only">
+                    Buscar categoria
+                </label>
                 <input
-                    type="text"
+                    id="category-search"
+                    type="search"
                     placeholder="Buscar categoria..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
 
-                <button onClick={() => setOpenModal(true)}>
+                <button type="button" onClick={() => openForm()}>
                     Nova categoria
                 </button>
             </div>
 
-            <div className="categories-list">
+            {pageError && (
+                <p className="categories-error" role="alert">
+                    {pageError}
+                </p>
+            )}
+
+            <ul className="categories-list">
                 {filteredCategorias.map((item) => (
-                    <div key={item.id} className="category-card">
+                    <li key={item.id} className="category-card">
                         <span>{item.name}</span>
 
                         <div className="category-actions">
                             <button
-                                onClick={() => {
-                                    setSelectedId(item.id);
-                                    setEditName(item.name);
-                                    setOpenEditModal(true);
-                                }}
+                                type="button"
+                                onClick={() => openForm(item)}
+                                aria-label={`Editar categoria ${item.name}`}
                             >
                                 Editar
                             </button>
                             <button
+                                type="button"
                                 className="danger"
-                                onClick={() => {
-                                    setSelectedId(item.id);
-                                    setOpenDeleteModal(true);
-                                }}
+                                onClick={() => setDeleting(item)}
+                                aria-label={`Deletar categoria ${item.name}`}
                             >
                                 Deletar
                             </button>
                         </div>
-                    </div>
+                    </li>
                 ))}
-            </div>
+            </ul>
 
-            {openModal && (
-                <div
-                    className="modal-overlay"
-                    onClick={() => setOpenModal(false)}
-                >
-                    <div
-                        className="modal-content"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <h3>Nova Categoria</h3>
-
-                        <input
-                            type="text"
-                            placeholder="Nome da categoria"
-                            value={nameCategoria}
-                            onChange={(e) => setNameCategoria(e.target.value)}
-                        />
-
-                        <div className="modal-actions">
-                            <button onClick={() => setOpenModal(false)}>
-                                Cancelar
-                            </button>
-                            <button onClick={createCategoria}>Salvar</button>
-                        </div>
+            <Modal
+                open={editing != null}
+                onClose={() => setEditing(null)}
+                title={editing?.id ? "Editar categoria" : "Nova categoria"}
+                overlayClassName="modal-overlay"
+                panelClassName="modal-content"
+                headClassName="modal-head"
+            >
+                <form onSubmit={saveCategory}>
+                    <label htmlFor="category-name" className="sr-only">
+                        Nome da categoria
+                    </label>
+                    <input
+                        id="category-name"
+                        type="text"
+                        placeholder="Nome da categoria"
+                        value={editing?.name ?? ""}
+                        onChange={(e) => setEditing((prev) => (prev ? { ...prev, name: e.target.value } : prev))}
+                        maxLength={80}
+                        aria-invalid={!!formError}
+                        aria-describedby={formError ? "category-error" : undefined}
+                    />
+                    {formError && (
+                        <p id="category-error" className="categories-error" role="alert">
+                            {formError}
+                        </p>
+                    )}
+                    <div className="modal-actions">
+                        <button type="button" onClick={() => setEditing(null)}>
+                            Cancelar
+                        </button>
+                        <button type="submit" disabled={saving}>
+                            {saving ? "Salvando..." : "Salvar"}
+                        </button>
                     </div>
+                </form>
+            </Modal>
+
+            <Modal
+                open={deleting != null}
+                onClose={() => setDeleting(null)}
+                title="Tem certeza?"
+                overlayClassName="modal-overlay"
+                panelClassName="modal-content delete"
+                headClassName="modal-head"
+            >
+                <p>A categoria “{deleting?.name}” será removida. Essa ação não pode ser desfeita.</p>
+                <div className="modal-actions">
+                    <button type="button" onClick={() => setDeleting(null)}>
+                        Cancelar
+                    </button>
+                    <button type="button" onClick={confirmDelete}>
+                        Sim, deletar
+                    </button>
                 </div>
-            )}
-
-            {openEditModal && (
-                <div
-                    className="modal-overlay"
-                    onClick={() => setOpenEditModal(false)}
-                >
-                    <div
-                        className="modal-content"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <h3>Editar categoria</h3>
-
-                        <input
-                            type="text"
-                            placeholder="Nome da categoria"
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
-                        />
-
-                        <div className="modal-actions">
-                            <button onClick={() => setOpenEditModal(false)}>
-                                Cancelar
-                            </button>
-                            <button onClick={saveEdit}>Salvar</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {openDeleteModal && (
-                <div
-                    className="modal-overlay"
-                    onClick={() => setOpenDeleteModal(false)}
-                >
-                    <div
-                        className="modal-content delete"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <h3>Tem certeza?</h3>
-                        <p>Essa ação não pode ser desfeita.</p>
-
-                        <div className="modal-actions">
-                            <button onClick={() => setOpenDeleteModal(false)}>
-                                Cancelar
-                            </button>
-                            <button onClick={confirmDelete}>Sim, deletar</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            </Modal>
         </div>
     );
 }

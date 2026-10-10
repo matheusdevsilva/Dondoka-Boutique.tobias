@@ -430,7 +430,6 @@
     color: var(--brown);
     text-transform: none;
     letter-spacing: normal;
-    outline: none;
     resize: vertical;
     transition: border-color 0.2s;
 }
